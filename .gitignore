@@ -1,0 +1,42 @@
+# ── Geheimnisse ─────────────────────────────────────────────────────────────
+# CLAUDE.md, Abschnitt „Sensible Daten": Ablageort ist /.secure/, und dieses
+# Verzeichnis wird nie committet. Die Muster darunter sind Tiefenstaffelung —
+# Stufe 0 des Gates prüft dieselben Pfade noch einmal.
+/.secure/
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+
+# ── Entwicklungsumgebung ────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*~
+
+# ── Betriebssystem ──────────────────────────────────────────────────────────
+.DS_Store
+.directory
+Thumbs.db
+
+# ── Bauartefakte (ab dem ersten Quellcode) ──────────────────────────────────
+# Cargo.lock gehört bewusst NICHT hierher: SM-PLT-009 verlangt
+# Abhängigkeitssperrdateien in der Versionsverwaltung, SM-OSS-009 prüft sie.
+/target/
+/build/
+*.rs.bk
+node_modules/
+
+# ── Nicht ignoriert, bewusst ────────────────────────────────────────────────
+# Reviews/  bleibt trackbar. Grüne Gate-Protokolle sind der Sorgfaltsnachweis
+#           und dürfen committet werden; rote werden nicht committet und nach
+#           REPORT_RETENTION_DAYS (14) automatisch entfernt, solange sie
+#           ungetrackt sind. Ein Pauschal-Ignore würde den Nachweis beseitigen.

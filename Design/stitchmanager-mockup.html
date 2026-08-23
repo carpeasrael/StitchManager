@@ -1,0 +1,1041 @@
+<!doctype html>
+<html lang="de" data-theme="hell">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StitchManager — Mockup im Kreuznaht-Design</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   KREUZNAHT — Gestaltungsvariablen
+   Rekonstruiert aus dem Kreuznaht-Markenstandard.
+   Vor der Umsetzung gegen theme-standard.json abgleichen.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root, [data-theme="hell"] {
+  --kn-bg:            #faf6f0;
+  --kn-surface:       #ffffff;
+  --kn-surface-2:     #f4ede2;
+  --kn-surface-3:     #ebe1d3;
+  --kn-border:        #e0d4c2;
+  --kn-border-strong: #c9b9a2;
+
+  --kn-ink:           #2e2a27;
+  --kn-ink-2:         #6e6259;
+  --kn-ink-3:         #8d8177;
+
+  --kn-brand:         #e85d5d;
+  --kn-brand-ink:     #c2452f;
+  --kn-brand-soft:    #fbe7e2;
+  --kn-amber:         #d98c1f;
+  --kn-amber-soft:    #fbeed6;
+
+  --kn-ok:            #3b754a;
+  --kn-ok-soft:       #e3f0e5;
+  --kn-warn:          #955e0e;
+  --kn-ki:            #6b5b8f;
+  --kn-ki-soft:       #eee9f5;
+
+  --kn-shadow:        0 1px 2px rgba(46,42,39,.06), 0 8px 24px rgba(46,42,39,.07);
+  --kn-card-shadow:   0 1px 2px rgba(46,42,39,.05);
+  --kn-seam:          #cbbaa4;
+  --kn-page:          #efe7db;
+}
+
+[data-theme="dunkel"] {
+  --kn-bg:            #221b17;
+  --kn-surface:       #2b231e;
+  --kn-surface-2:     #251e19;
+  --kn-surface-3:     #3a2f27;
+  --kn-border:        #443830;
+  --kn-border-strong: #5c4c40;
+
+  --kn-ink:           #f3e9dd;
+  --kn-ink-2:         #b3a294;
+  --kn-ink-3:         #91816f;
+
+  --kn-brand:         #f0836e;
+  --kn-brand-ink:     #f0836e;
+  --kn-brand-soft:    #402620;
+  --kn-amber:         #e5b463;
+  --kn-amber-soft:    #3b2d18;
+
+  --kn-ok:            #7fb98c;
+  --kn-ok-soft:       #23331f;
+  --kn-warn:          #e0ac5a;
+  --kn-ki:            #b3a3d6;
+  --kn-ki-soft:       #2f2839;
+
+  --kn-shadow:        0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  --kn-card-shadow:   0 1px 2px rgba(0,0,0,.3);
+  --kn-seam:          #5c4c40;
+  --kn-page:          #18120f;
+}
+
+:root {
+  --f-display: "Josefin Sans", "Avenir Next", "Century Gothic", "Futura", ui-sans-serif, sans-serif;
+  --f-body:    "Lato", "Helvetica Neue", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --t-xs: 11px; --t-sm: 12px; --t-md: 13px; --t-lg: 15px; --t-xl: 19px;
+  --r-sm: 4px; --r-md: 7px; --r-lg: 11px; --r-pill: 999px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--kn-page); color: var(--kn-ink);
+  font-family: var(--f-body); font-size: var(--t-md); line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  padding: 28px 20px 60px;
+  transition: background-color .25s ease, color .25s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+:focus-visible { outline: 2px solid var(--kn-brand); outline-offset: 2px; border-radius: var(--r-sm); }
+button { font: inherit; color: inherit; cursor: pointer; }
+
+.page { max-width: 1560px; margin: 0 auto; }
+.page-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px; margin-bottom: 18px; flex-wrap: wrap;
+}
+.page-head h1 { font-family: var(--f-display); font-weight: 600; font-size: 26px; margin: 0 0 3px; }
+.page-head p { margin: 0; color: var(--kn-ink-2); max-width: 64ch; }
+
+.theme-switch {
+  display: inline-flex; background: var(--kn-surface-2);
+  border: 1px solid var(--kn-border); border-radius: var(--r-pill); padding: 3px;
+}
+.theme-switch button {
+  border: 0; background: transparent; color: var(--kn-ink-2);
+  padding: 6px 15px; border-radius: var(--r-pill);
+  font-size: var(--t-sm); font-weight: 700; letter-spacing: .02em;
+  transition: background-color .2s, color .2s;
+}
+.theme-switch button[aria-pressed="true"] { background: var(--kn-brand); color: #fff; }
+[data-theme="dunkel"] .theme-switch button[aria-pressed="true"] { color: #2b1a15; }
+
+/* ═══ SIGNATUR: die Naht ═══ */
+.seam-h {
+  height: 1px; border: 0; margin: 0;
+  background-image: linear-gradient(90deg, var(--kn-seam) 0 6px, transparent 6px 12px);
+  background-size: 12px 1px;
+}
+.seam-v {
+  width: 1px;
+  background-image: linear-gradient(180deg, var(--kn-seam) 0 6px, transparent 6px 12px);
+  background-size: 1px 12px;
+}
+
+/* ═══ Fenster ═══ */
+.window {
+  background: var(--kn-bg);
+  border: 1px solid var(--kn-border-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--kn-shadow);
+  overflow: hidden;
+  display: grid; grid-template-rows: 46px 1fr 26px;
+  height: 810px; min-height: 560px; min-width: 860px;
+}
+
+.toolbar {
+  display: flex; align-items: center; gap: 12px; padding: 0 12px;
+  background: var(--kn-surface-2); border-bottom: 1px solid var(--kn-border);
+}
+.brand { display: flex; align-items: center; gap: 9px; padding-right: 6px; }
+.brand-name { font-family: var(--f-display); font-weight: 700; font-size: var(--t-lg); letter-spacing: .03em; }
+.brand-name span { color: var(--kn-brand-ink); }
+
+.search {
+  flex: 0 1 320px; display: flex; align-items: center; gap: 7px;
+  background: var(--kn-surface); border: 1px solid var(--kn-border);
+  border-radius: var(--r-pill); padding: 5px 12px;
+  color: var(--kn-ink-2);
+}
+.search kbd {
+  margin-left: auto; font-family: var(--f-mono); font-size: var(--t-xs);
+  border: 1px solid var(--kn-border); border-radius: var(--r-sm);
+  padding: 1px 5px; color: var(--kn-ink-2);
+}
+.tb-spacer { flex: 1; }
+
+.btn {
+  border: 1px solid var(--kn-border); background: var(--kn-surface); color: var(--kn-ink);
+  border-radius: var(--r-pill); padding: 5px 13px;
+  font-size: var(--t-sm); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  transition: border-color .15s, background-color .15s;
+}
+.btn:hover { border-color: var(--kn-border-strong); }
+.btn-primary { background: var(--kn-brand); border-color: var(--kn-brand); color: #fff; }
+[data-theme="dunkel"] .btn-primary { color: #2b1a15; }
+.btn-ki { border-color: var(--kn-ki); color: var(--kn-ki); background: var(--kn-ki-soft); }
+.btn-block { width: 100%; justify-content: center; }
+.btn-sm { padding: 3px 10px; font-size: var(--t-xs); }
+
+.seg { display: inline-flex; border: 1px solid var(--kn-border); border-radius: var(--r-pill); overflow: hidden; }
+.seg button { border: 0; background: var(--kn-surface); padding: 5px 12px; font-size: var(--t-sm); color: var(--kn-ink-2); }
+.seg button[aria-pressed="true"] { background: var(--kn-surface-3); color: var(--kn-ink); font-weight: 700; }
+
+/* ═══ Drei Spalten — immer senkrecht geteilt ═══ */
+.window-scroll { overflow-x: auto; padding-bottom: 4px; }
+.body {
+  display: grid;
+  grid-template-columns: minmax(190px, 226px) 1px minmax(300px, 1.25fr) 1px minmax(290px, .95fr);
+  min-height: 0;
+}
+
+/* — LINKS: Übersicht und Navigation — */
+.nav { background: var(--kn-surface-2); overflow: auto; padding: 12px 0 16px; }
+.nav-label {
+  font-family: var(--f-display); font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--kn-ink-2);
+  padding: 12px 14px 6px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 14px 5px 12px; color: var(--kn-ink-2); cursor: default;
+}
+.nav-item .stitch { opacity: 0; flex: 0 0 10px; }
+.nav-item:hover { background: color-mix(in srgb, var(--kn-surface-3) 55%, transparent); }
+.nav-item[aria-current="true"] { background: var(--kn-surface-3); color: var(--kn-ink); font-weight: 700; }
+.nav-item[aria-current="true"] .stitch { opacity: 1; }
+.nav-item .count { margin-left: auto; font-family: var(--f-mono); font-size: var(--t-xs); color: var(--kn-ink-2); font-weight: 400; }
+.nav-item.child { padding-left: 32px; }
+
+/* Übersicht oben in der Navigation */
+.overview { margin: 2px 12px 6px; }
+.ov-card {
+  background: var(--kn-surface); border: 1px solid var(--kn-border);
+  border-radius: var(--r-md); padding: 10px 11px;
+}
+.ov-total { font-family: var(--f-mono); font-size: 21px; font-weight: 500; line-height: 1.1; }
+.ov-total small { font-family: var(--f-body); font-size: var(--t-xs); color: var(--kn-ink-2); display: block; margin-top: 2px; }
+.ov-bar { display: flex; height: 6px; border-radius: var(--r-pill); overflow: hidden; margin: 10px 0 7px; }
+.ov-bar span { display: block; }
+.ov-legend { display: flex; flex-wrap: wrap; gap: 4px 11px; font-size: var(--t-xs); color: var(--kn-ink-2); }
+.ov-legend i { width: 7px; height: 7px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+
+/* — MITTE: Musterauswahl als Kacheln — */
+.pick { display: flex; flex-direction: column; min-width: 0; background: var(--kn-bg); }
+.pick-head {
+  padding: 9px 14px; display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap; border-bottom: 1px solid var(--kn-border);
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--kn-surface); border: 1px solid var(--kn-border);
+  border-radius: var(--r-pill); padding: 3px 8px 3px 10px;
+  font-size: var(--t-xs); color: var(--kn-ink-2);
+}
+.chip b { font-weight: 700; color: var(--kn-ink); }
+.chip .x { color: var(--kn-ink-3); font-size: 13px; line-height: 1; }
+.chip-clear { color: var(--kn-brand-ink); border-style: dashed; }
+.pick-meta { margin-left: auto; font-size: var(--t-xs); color: var(--kn-ink-2); font-family: var(--f-mono); }
+
+.grid {
+  overflow: auto; flex: 1; padding: 14px;
+  display: grid; gap: 13px;
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  align-content: start;
+}
+.card {
+  background: var(--kn-surface); border: 1px solid var(--kn-border);
+  border-radius: var(--r-md); overflow: hidden; cursor: default;
+  box-shadow: var(--kn-card-shadow);
+  transition: border-color .15s, transform .15s;
+  position: relative;
+}
+.card:hover { border-color: var(--kn-border-strong); transform: translateY(-1px); }
+.card[aria-selected="true"] {
+  border-color: var(--kn-brand);
+  box-shadow: 0 0 0 2px var(--kn-brand-soft), var(--kn-card-shadow);
+}
+.card-mark {
+  position: absolute; top: 7px; right: 7px; opacity: 0;
+  color: var(--kn-brand);
+}
+.card[aria-selected="true"] .card-mark { opacity: 1; }
+
+.card-figure {
+  aspect-ratio: 1 / 1; background: var(--kn-bg);
+  display: grid; place-items: center;
+  border-bottom: 1px solid var(--kn-border);
+  position: relative;
+}
+.card-figure .fmt {
+  position: absolute; left: 7px; bottom: 7px;
+  font-family: var(--f-mono); font-size: 9px; font-weight: 700; letter-spacing: .07em;
+  background: var(--kn-surface); border: 1px solid var(--kn-border-strong);
+  border-radius: var(--r-sm); padding: 0 4px; color: var(--kn-ink-2);
+}
+.card-figure .ki {
+  position: absolute; right: 7px; bottom: 7px;
+  color: var(--kn-ki); background: var(--kn-ki-soft);
+  border: 1px solid var(--kn-ki); border-radius: var(--r-sm);
+  font-size: 9px; font-weight: 700; padding: 0 4px; letter-spacing: .07em;
+}
+.card-body { padding: 8px 10px 10px; }
+.card-name {
+  font-weight: 700; font-size: var(--t-md); line-height: 1.25;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; min-height: 2.5em;
+}
+.card-size {
+  font-family: var(--f-mono); font-size: var(--t-xs);
+  color: var(--kn-ink-2); margin-top: 4px;
+}
+
+/* — RECHTS: Details zur Stickdatei — */
+.detail { background: var(--kn-surface); overflow: auto; min-width: 0; }
+.preview {
+  background: var(--kn-bg); border-bottom: 1px solid var(--kn-border);
+  padding: 14px; display: grid; place-items: center; position: relative;
+}
+.preview-tools { position: absolute; right: 12px; top: 12px; display: flex; gap: 5px; }
+.icon-btn {
+  width: 26px; height: 26px; border-radius: var(--r-sm);
+  border: 1px solid var(--kn-border); background: var(--kn-surface);
+  display: grid; place-items: center; color: var(--kn-ink-2); font-size: 13px;
+}
+.detail-body { padding: 14px 16px 26px; }
+.detail-title { font-family: var(--f-display); font-size: var(--t-xl); font-weight: 600; margin: 0 0 2px; }
+.detail-sub { color: var(--kn-ink-2); font-size: var(--t-sm); margin: 0 0 14px; }
+
+.sec-label {
+  font-family: var(--f-display); font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--kn-ink-2);
+  margin: 20px 0 8px;
+}
+.sec-label:first-of-type { margin-top: 2px; }
+
+.field { margin-bottom: 9px; }
+.field label { display: block; font-size: var(--t-xs); color: var(--kn-ink-2); margin-bottom: 3px; font-weight: 700; }
+.input {
+  background: var(--kn-bg); border: 1px solid var(--kn-border);
+  border-radius: var(--r-sm); padding: 6px 9px; color: var(--kn-ink);
+}
+.input.ki { border-color: var(--kn-ki); background: var(--kn-ki-soft); }
+.input.multiline { min-height: 50px; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 12px; }
+.stat { background: var(--kn-bg); border: 1px solid var(--kn-border); border-radius: var(--r-md); padding: 7px 10px; }
+.stat dt { font-size: var(--t-xs); color: var(--kn-ink-2); margin: 0 0 2px; }
+.stat dd { margin: 0; font-family: var(--f-mono); font-size: var(--t-md); font-weight: 500; }
+
+/* Garnfarben */
+.threads { display: flex; flex-direction: column; gap: 5px; }
+.thread {
+  display: flex; align-items: center; gap: 9px;
+  font-size: var(--t-xs); color: var(--kn-ink-2);
+  background: var(--kn-bg); border: 1px solid var(--kn-border);
+  border-radius: var(--r-sm); padding: 4px 8px;
+}
+.thread-swatch {
+  width: 20px; height: 20px; border-radius: var(--r-sm);
+  border: 1px solid var(--kn-border-strong); position: relative; overflow: hidden; flex: 0 0 20px;
+}
+.thread-swatch::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.34) 0 2px, transparent 2px 4px);
+}
+.thread-name { color: var(--kn-ink); font-weight: 600; }
+.thread code { font-family: var(--f-mono); }
+.thread .stitches { margin-left: auto; font-family: var(--f-mono); }
+
+/* Optionen */
+.opt-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0; border-bottom: 1px solid color-mix(in srgb, var(--kn-border) 60%, transparent);
+}
+.opt-row:last-of-type { border-bottom: 0; }
+.opt-label { font-size: var(--t-sm); color: var(--kn-ink-2); flex: 0 0 40%; }
+.select {
+  margin-left: auto; background: var(--kn-bg); border: 1px solid var(--kn-border);
+  border-radius: var(--r-sm); padding: 4px 26px 4px 9px; font-size: var(--t-sm);
+  position: relative; min-width: 0; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.select::after {
+  content: "▾"; position: absolute; right: 8px; top: 50%;
+  transform: translateY(-50%); color: var(--kn-ink-3); font-size: 10px;
+}
+.switch {
+  margin-left: auto; width: 34px; height: 19px; border-radius: var(--r-pill);
+  background: var(--kn-surface-3); border: 1px solid var(--kn-border-strong);
+  position: relative; flex: 0 0 34px;
+}
+.switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 13px; height: 13px; border-radius: 50%; background: var(--kn-surface);
+  border: 1px solid var(--kn-border-strong); transition: left .18s;
+}
+.switch[data-on="true"] { background: var(--kn-brand); border-color: var(--kn-brand); }
+.switch[data-on="true"]::after { left: 17px; border-color: var(--kn-brand); }
+
+.fit-note {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--kn-ok-soft); border: 1px solid var(--kn-ok);
+  border-radius: var(--r-md); padding: 8px 10px; margin-top: 10px;
+  font-size: var(--t-xs); color: var(--kn-ink);
+}
+.fit-note b { color: var(--kn-ok); }
+.warn-note { background: var(--kn-amber-soft); border-color: var(--kn-amber); }
+.warn-note b { color: var(--kn-warn); }
+
+.actions { display: grid; gap: 7px; margin-top: 12px; }
+.actions .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+
+.ki-note {
+  display: flex; gap: 9px; align-items: flex-start;
+  background: var(--kn-ki-soft); border: 1px solid var(--kn-ki);
+  border-radius: var(--r-md); padding: 9px 11px; margin: 2px 0 4px;
+  font-size: var(--t-sm);
+}
+.ki-note b { color: var(--kn-ki); }
+.ki-actions { display: flex; gap: 7px; margin-top: 8px; }
+
+.tagline { display: flex; gap: 5px; flex-wrap: wrap; }
+.tag { background: var(--kn-surface-3); border-radius: var(--r-pill); padding: 1px 8px; font-size: var(--t-xs); color: var(--kn-ink-2); }
+
+.project-card {
+  border: 1px solid var(--kn-border); border-radius: var(--r-md);
+  padding: 9px 11px; background: var(--kn-bg);
+  display: flex; align-items: center; gap: 10px;
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+.status-pill { border-radius: var(--r-pill); padding: 2px 9px; font-size: var(--t-xs); font-weight: 700; }
+.status-progress { background: var(--kn-amber-soft); color: var(--kn-warn); }
+
+.statusbar {
+  display: flex; align-items: center; gap: 16px; padding: 0 12px;
+  font-size: var(--t-xs); color: var(--kn-ink-2);
+  background: var(--kn-surface-2); border-top: 1px solid var(--kn-border);
+}
+.statusbar .num { font-family: var(--f-mono); }
+.statusbar .right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.usb { display: inline-flex; align-items: center; gap: 6px; color: var(--kn-ok); font-weight: 700; }
+
+/* ═══ Referenz ═══ */
+.ref { margin-top: 34px; }
+.ref h2 {
+  font-family: var(--f-display); font-size: var(--t-lg); font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--kn-ink-2); margin: 0 0 14px;
+}
+.ref-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
+.ref-card { background: var(--kn-surface); border: 1px solid var(--kn-border); border-radius: var(--r-md); padding: 15px 16px; }
+.ref-card h3 { font-family: var(--f-display); font-size: var(--t-md); font-weight: 700; margin: 0 0 11px; letter-spacing: .04em; }
+.sw-row { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; font-size: var(--t-xs); }
+.sw { width: 30px; height: 22px; border-radius: var(--r-sm); border: 1px solid var(--kn-border-strong); flex: 0 0 30px; }
+.sw-row code { font-family: var(--f-mono); margin-left: auto; color: var(--kn-ink-2); }
+.type-sample { margin-bottom: 11px; }
+.type-sample small { display: block; font-size: var(--t-xs); color: var(--kn-ink-2); margin-bottom: 1px; }
+.note {
+  margin-top: 20px; padding: 13px 15px; border-radius: var(--r-md);
+  background: var(--kn-amber-soft); border: 1px solid var(--kn-amber); font-size: var(--t-sm);
+}
+.note b { font-weight: 700; }
+.note ul { margin: 7px 0 0; padding-left: 19px; }
+.note li { margin-bottom: 4px; }
+
+/* Die senkrechte Teilung bleibt in jeder Fensterbreite bestehen.
+   Wird es enger als 860 px, scrollt das Fenster waagerecht,
+   statt die Spalten übereinander zu klappen. */
+@media (max-width: 1180px) {
+  body { padding: 18px 12px 48px; }
+  .window { height: 720px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 11px; padding: 11px; }
+  .ov-legend { gap: 3px 8px; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="stitch" viewBox="0 0 10 10">
+    <path d="M1.6 1.6 L8.4 8.4 M8.4 1.6 L1.6 8.4" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" fill="none"/>
+  </symbol>
+</svg>
+
+<div class="page">
+
+  <header class="page-head">
+    <div>
+      <h1>StitchManager — Hauptfenster</h1>
+      <p>Dreigeteiltes Layout: links Übersicht und Navigation, in der Mitte die bildgeführte
+         Musterauswahl mit Name und Größe, rechts alle Details zur Stickdatei samt Farben und
+         Optionen. Der Dunkelmodus verwendet Espressotöne statt neutraler Graustufen.</p>
+    </div>
+    <div class="theme-switch" role="group" aria-label="Darstellung">
+      <button type="button" id="btn-hell" aria-pressed="true">Hell</button>
+      <button type="button" id="btn-dunkel" aria-pressed="false">Dunkel</button>
+    </div>
+  </header>
+
+  <div class="window-scroll">
+  <div class="window">
+
+    <!-- ══ Werkzeugleiste ══ -->
+    <div class="toolbar">
+      <div class="brand">
+        <svg width="20" height="20" viewBox="0 0 10 10" style="color:var(--kn-brand)" aria-hidden="true"><use href="#stitch"/></svg>
+        <span class="brand-name">Stitch<span>Manager</span></span>
+      </div>
+
+      <div class="search">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.6"/><path d="M10.4 10.4 14 14" stroke-linecap="round"/>
+        </svg>
+        <span>Bibliothek durchsuchen …</span>
+        <kbd>⌘F</kbd>
+      </div>
+
+      <div class="seg" role="group" aria-label="Ansicht">
+        <button type="button" aria-pressed="true">Kacheln</button>
+        <button type="button" aria-pressed="false">Liste</button>
+      </div>
+
+      <div class="tb-spacer"></div>
+
+      <button type="button" class="btn">Importieren</button>
+      <button type="button" class="btn btn-ki">
+        <svg width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><use href="#stitch"/></svg>
+        KI-Analyse
+      </button>
+      <button type="button" class="btn btn-primary">Auf USB senden</button>
+    </div>
+
+    <!-- ══ Drei Spalten ══ -->
+    <div class="body">
+
+      <!-- ─── LINKS: Übersicht und Navigation ─── -->
+      <nav class="nav" aria-label="Übersicht und Navigation">
+
+        <div class="nav-label">Übersicht</div>
+        <div class="overview">
+          <div class="ov-card">
+            <div class="ov-total">12 847 <small>Dateien in der Bibliothek</small></div>
+            <div class="ov-bar" aria-hidden="true">
+              <span style="background:var(--kn-brand);width:58%"></span>
+              <span style="background:var(--kn-amber);width:21%"></span>
+              <span style="background:var(--kn-ok);width:13%"></span>
+              <span style="background:var(--kn-ink-3);width:8%"></span>
+            </div>
+            <div class="ov-legend">
+              <span><i style="background:var(--kn-brand)"></i>PES 7 451</span>
+              <span><i style="background:var(--kn-amber)"></i>DST 2 698</span>
+              <span><i style="background:var(--kn-ok)"></i>JEF 1 671</span>
+              <span><i style="background:var(--kn-ink-3)"></i>Übrige 1 027</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="seam-h" style="margin:10px 12px">
+
+        <div class="nav-label">Bibliothek</div>
+        <div class="nav-item" aria-current="true">
+          <svg class="stitch" width="10" height="10" viewBox="0 0 10 10" style="color:var(--kn-brand)" aria-hidden="true"><use href="#stitch"/></svg>
+          Alle Muster <span class="count">12 847</span>
+        </div>
+        <div class="nav-item"><span class="stitch"></span>Zuletzt importiert <span class="count">218</span></div>
+        <div class="nav-item"><span class="stitch"></span>Favoriten <span class="count">94</span></div>
+
+        <hr class="seam-h" style="margin:10px 12px">
+
+        <div class="nav-label">Ordner</div>
+        <div class="nav-item"><span class="stitch"></span>Blumen &amp; Botanik <span class="count">2 411</span></div>
+        <div class="nav-item child"><span class="stitch"></span>Rosen <span class="count">336</span></div>
+        <div class="nav-item child"><span class="stitch"></span>Wildblumen <span class="count">512</span></div>
+        <div class="nav-item"><span class="stitch"></span>Tiere <span class="count">1 908</span></div>
+        <div class="nav-item"><span class="stitch"></span>Weihnachten <span class="count">1 176</span></div>
+        <div class="nav-item"><span class="stitch"></span>Schriftzüge <span class="count">843</span></div>
+        <div class="nav-item"><span class="stitch"></span>Schnittmuster <span class="count">327</span></div>
+
+        <hr class="seam-h" style="margin:10px 12px">
+
+        <div class="nav-label">Intelligente Ordner</div>
+        <div class="nav-item"><span class="stitch"></span>Ohne Thema <span class="count">1 042</span></div>
+        <div class="nav-item"><span class="stitch"></span>Über 20 000 Stiche <span class="count">386</span></div>
+        <div class="nav-item"><span class="stitch"></span>Lizenz fehlt <span class="count">57</span></div>
+
+        <hr class="seam-h" style="margin:10px 12px">
+
+        <div class="nav-label">Arbeit</div>
+        <div class="nav-item"><span class="stitch"></span>Projekte <span class="count">12</span></div>
+        <div class="nav-item"><span class="stitch"></span>Fertigung <span class="count">4</span></div>
+        <div class="nav-item"><span class="stitch"></span>Beschaffung <span class="count">2</span></div>
+      </nav>
+
+      <div class="seam-v" aria-hidden="true"></div>
+
+      <!-- ─── MITTE: Musterauswahl ─── -->
+      <section class="pick" aria-label="Musterauswahl">
+        <div class="pick-head">
+          <span class="chip"><b>Ordner:</b> Weihnachten <span class="x">×</span></span>
+          <span class="chip"><b>Format:</b> PES <span class="x">×</span></span>
+          <span class="chip chip-clear">Zurücksetzen</span>
+          <span class="pick-meta">184 Muster · nach Name</span>
+        </div>
+
+        <div class="grid" role="listbox" aria-label="Stickmuster">
+
+          <div class="card" role="option" aria-selected="true">
+            <svg class="card-mark" width="13" height="13" viewBox="0 0 10 10" aria-hidden="true"><use href="#stitch"/></svg>
+            <div class="card-figure">
+              <svg width="104" height="104" viewBox="0 0 120 120" aria-hidden="true">
+                <g fill="none" stroke-linecap="round" stroke-width="3" stroke-dasharray="3 2.6">
+                  <path d="M60 16 L69 45 L99 45 L75 63 L84 92 L60 74 L36 92 L45 63 L21 45 L51 45 Z" stroke="#c2452f"/>
+                  <path d="M60 32 L64 47 L80 47 L67 57 L72 72 L60 63 L48 72 L53 57 L40 47 L56 47 Z" stroke="#d98c1f"/>
+                  <circle cx="60" cy="55" r="6" stroke="#3f7d4f"/>
+                </g>
+              </svg>
+              <span class="fmt">PES</span>
+            </div>
+            <div class="card-body">
+              <div class="card-name">Weihnachtsstern gefüllt</div>
+              <div class="card-size">96 × 132 mm</div>
+            </div>
+          </div>
+
+          <div class="card" role="option" aria-selected="false">
+            <svg class="card-mark" width="13" height="13" viewBox="0 0 10 10" aria-hidden="true"><use href="#stitch"/></svg>
+            <div class="card-figure">
+              <svg width="104" height="104" viewBox="0 0 120 120" aria-hidden="true">
+                <g fill="none" stroke-linecap="round" stroke-width="3" stroke-dasharray="3 2.6">
+                  <path d="M60 20 L88 92 L32 92 Z" stroke="#3f7d4f"/>
+                  <path d="M60 38 L78 78 L42 78 Z" stroke="#3f7d4f"/>
+                  <path d="M60 92 v12" stroke="#8d6a3f"/>
+                  <circle cx="60" cy="24" r="5" stroke="#d98c1f"/>
+                </g>
+              </svg>
+              <span class="fmt">PES</span>
+            </div>
+            <div class="card-body">
+              <div class="card-name">Tannenbaum klassisch</div>
+              <div class="card-size">78 × 104 mm</div>
+            </div>
+          </div>
+
+          <div class="card" role="option" aria-selected="false">
+            <svg class="card-mark" width="13" height="13" viewBox="0 0 10 10" aria-hidden="true"><use href="#stitch"/></svg>
+            <div class="card-figure">
+              <svg width="104" height="104" viewBox="0 0 120 120" aria-hidden="true">
+                <g fill="none" stroke-linecap="round" stroke-width="3" stroke-dasharray="3 2.6">
+                  <circle cx="60" cy="66" r="30" stroke="#c2452f"/>
+                  <path d="M60 36 v60 M30 66 h60" stroke="#d98c1f"/>
+                  <path d="M52 30 h16 v8 h-16 z" stroke="#8d6a3f"/>
+                </g>
+              </svg>
+              <span class="fmt">PES</span>
+              <span class="ki">KI</span>
+            </div>
+            <div class="card-body">
+              <div class="card-name">Christbaumkugel Ornament</div>
+              <div class="card-size">88 × 88 mm</div>
+            </div>
+          </div>
+
+          <div class="card" role="option" aria-selected="false">
+            <svg class="card-mark" width="13" height="13" viewBox="0 0 10 10" aria-hidden="true"><use href="#stitch"/></svg>
+            <div class="card-figure">
+              <svg width="104" height="104" viewBox="0 0 120 120" aria-hidden="true">
+                <g fill="none" stroke-linecap="round" stroke-width="3" stroke-dasharray="3 2.6">
+                  <path d="M24 74 C40 46 80 46 96 74" stroke="#c2452f"/>
+                  <path d="M36 74 v18 h48 v-18" stroke="#3f7d4f"/>
+                  <path d="M60 74 v18 M36 84 h48" stroke="#d98c1f"/>
+                </g>
+              </svg>
+              <span class="fmt">PES</span>
+            </div>
+            <div class="card-body">
+              <div class="card-name">Schlitten mit Geschenken</div>
+              <div class="card-size">142 × 96 mm</div>
+            </div>
+          </div>
+
+          <div class="card" role="option" aria-selected="false">
+            <svg class="card-mark" width="13" height="13" viewBox="0 0 10 10" aria-hidden="true"><use href="#stitch"/></svg>
+            <div class="card-figure">
+              <svg width="104" height="104" viewBox="0 0 120 120" aria-hidden="true">
+                <g fill="none" stroke-linecap="round" stroke-width="3" stroke-dasharray="3 2.6">
+                  <path d="M34 46 h52 v50 h-52 z" stroke="#8d6a3f"/>
+                  <path d="M60 46 v50 M34 68 h52" stroke="#c2452f"/>
+                  <path d="M48 46 C48 30 72 30 72 46" stroke="#d98c1f"/>
+                </g>
+              </svg>
+              <span class="fmt">PES</span>
+            </div>
+            <div class="card-body">
+              <div class="card-name">Geschenkpaket klein</div>
+              <div class="card-size">62 × 62 mm</div>
+            </div>
+          </div>
+
+          <div class="card" role="option" aria-selected="false">
+            <svg class="card-mark" width="13" height="13" viewBox="0 0 10 10" aria-hidden="true"><use href="#stitch"/></svg>
+            <div class="card-figure">
+              <svg width="104" height="104" viewBox="0 0 120 120" aria-hidden="true">
+                <g fill="none" stroke-linecap="round" stroke-width="3" stroke-dasharray="3 2.6">
+                  <path d="M40 96 V52 C40 32 78 32 78 52 V60" stroke="#c2452f"/>
+                  <path d="M46 90 h-12 M46 78 h-12 M46 66 h-12" stroke="#f2e2c4"/>
+                </g>
+              </svg>
+              <span class="fmt">DST</span>
+            </div>
+            <div class="card-body">
+              <div class="card-name">Zuckerstange Bordüre</div>
+              <div class="card-size">184 × 34 mm</div>
+            </div>
+          </div>
+
+          <div class="card" role="option" aria-selected="false">
+            <svg class="card-mark" width="13" height="13" viewBox="0 0 10 10" aria-hidden="true"><use href="#stitch"/></svg>
+            <div class="card-figure">
+              <svg width="104" height="104" viewBox="0 0 120 120" aria-hidden="true">
+                <g fill="none" stroke-linecap="round" stroke-width="3" stroke-dasharray="3 2.6">
+                  <circle cx="60" cy="60" r="26" stroke="#a8b6c4"/>
+                  <path d="M60 22 v76 M22 60 h76 M33 33 L87 87 M87 33 L33 87" stroke="#a8b6c4"/>
+                </g>
+              </svg>
+              <span class="fmt">PES</span>
+            </div>
+            <div class="card-body">
+              <div class="card-name">Schneeflocke filigran</div>
+              <div class="card-size">72 × 72 mm</div>
+            </div>
+          </div>
+
+          <div class="card" role="option" aria-selected="false">
+            <svg class="card-mark" width="13" height="13" viewBox="0 0 10 10" aria-hidden="true"><use href="#stitch"/></svg>
+            <div class="card-figure">
+              <svg width="104" height="104" viewBox="0 0 120 120" aria-hidden="true">
+                <g fill="none" stroke-linecap="round" stroke-width="3" stroke-dasharray="3 2.6">
+                  <circle cx="60" cy="42" r="16" stroke="#f2e2c4"/>
+                  <path d="M44 42 C44 24 76 24 76 42" stroke="#c2452f"/>
+                  <path d="M40 44 h40" stroke="#c2452f"/>
+                  <path d="M48 58 C52 74 68 74 72 58" stroke="#f2e2c4"/>
+                </g>
+              </svg>
+              <span class="fmt">PES</span>
+              <span class="ki">KI</span>
+            </div>
+            <div class="card-body">
+              <div class="card-name">Weihnachtsmann Kopf</div>
+              <div class="card-size">84 × 96 mm</div>
+            </div>
+          </div>
+
+          <div class="card" role="option" aria-selected="false">
+            <svg class="card-mark" width="13" height="13" viewBox="0 0 10 10" aria-hidden="true"><use href="#stitch"/></svg>
+            <div class="card-figure">
+              <svg width="104" height="104" viewBox="0 0 120 120" aria-hidden="true">
+                <g fill="none" stroke-linecap="round" stroke-width="3" stroke-dasharray="3 2.6">
+                  <path d="M30 70 C30 46 90 46 90 70 C90 92 30 92 30 70 Z" stroke="#3f7d4f"/>
+                  <circle cx="46" cy="66" r="5" stroke="#c2452f"/>
+                  <circle cx="74" cy="66" r="5" stroke="#c2452f"/>
+                  <path d="M60 40 v10" stroke="#8d6a3f"/>
+                </g>
+              </svg>
+              <span class="fmt">JEF</span>
+            </div>
+            <div class="card-body">
+              <div class="card-name">Adventskranz rund</div>
+              <div class="card-size">118 × 118 mm</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <div class="seam-v" aria-hidden="true"></div>
+
+      <!-- ─── RECHTS: Details zur Stickdatei ─── -->
+      <aside class="detail" aria-label="Details zur Stickdatei">
+        <div class="preview">
+          <div class="preview-tools">
+            <span class="icon-btn" title="Verkleinern">−</span>
+            <span class="icon-btn" title="Vergrößern">+</span>
+            <span class="icon-btn" title="Einpassen">⤢</span>
+          </div>
+          <svg width="200" height="200" viewBox="0 0 120 120" aria-label="Vorschau des Stickmusters">
+            <g fill="none" stroke-linecap="round" stroke-width="2.6" stroke-dasharray="2.6 2.4">
+              <path d="M60 16 L69 45 L99 45 L75 63 L84 92 L60 74 L36 92 L45 63 L21 45 L51 45 Z" stroke="#c2452f"/>
+              <path d="M60 30 L65 47 L83 47 L69 58 L74 75 L60 64 L46 75 L51 58 L37 47 L55 47 Z" stroke="#d98c1f"/>
+              <circle cx="60" cy="55" r="7" stroke="#3f7d4f"/>
+            </g>
+            <g stroke="#8d6a3f" stroke-width="1.6" stroke-linecap="round" opacity=".5">
+              <path d="M18 104 h84" stroke-dasharray="5 4"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="detail-body">
+          <h2 class="detail-title">Weihnachtsstern gefüllt</h2>
+          <p class="detail-sub">Weihnachten / Sterne · geändert am 04.11.2025</p>
+
+          <div class="ki-note">
+            <svg width="15" height="15" viewBox="0 0 10 10" style="color:var(--kn-ki);flex:0 0 15px" aria-hidden="true"><use href="#stitch"/></svg>
+            <div>
+              <b>KI-Vorschlag liegt vor.</b> Beschreibung und zwei Schlagworte wurden lokal
+              erzeugt. Jedes Feld einzeln übernehmen oder verwerfen.
+              <div class="ki-actions">
+                <button type="button" class="btn btn-sm">Alle übernehmen</button>
+                <button type="button" class="btn btn-sm">Alle verwerfen</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sec-label">Angaben</div>
+          <div class="field">
+            <label for="f-name">Name</label>
+            <div class="input" id="f-name">Weihnachtsstern gefüllt</div>
+          </div>
+          <div class="field">
+            <label for="f-desc">Beschreibung <span style="color:var(--kn-ki)">· KI-Vorschlag</span></label>
+            <div class="input ki multiline" id="f-desc">Sechszackiger Stern in Vollstickerei mit
+              innerer Kontur und Mittelkreis. Geeignet für Kissenhüllen und Tischläufer.</div>
+          </div>
+          <div class="field">
+            <label for="f-lizenz">Lizenz</label>
+            <div class="input" id="f-lizenz">Kommerzielle Nutzung erlaubt · Beleg hinterlegt</div>
+          </div>
+
+          <div class="sec-label">Größe und technische Werte</div>
+          <div class="grid2">
+            <dl class="stat"><dt>Breite</dt><dd>96,0 mm</dd></dl>
+            <dl class="stat"><dt>Höhe</dt><dd>132,0 mm</dd></dl>
+            <dl class="stat"><dt>Stiche</dt><dd>18 402</dd></dl>
+            <dl class="stat"><dt>Farbwechsel</dt><dd>7</dd></dl>
+            <dl class="stat"><dt>Format</dt><dd>PES v6</dd></dl>
+            <dl class="stat"><dt>Dateigröße</dt><dd>247 KB</dd></dl>
+          </div>
+
+          <div class="sec-label">Farben · Brother-Garne</div>
+          <div class="threads">
+            <div class="thread"><span class="thread-swatch" style="background:#c2452f"></span>
+              <span class="thread-name">Christmas Red</span><code>807</code><span class="stitches">6 210</span></div>
+            <div class="thread"><span class="thread-swatch" style="background:#d98c1f"></span>
+              <span class="thread-name">Harvest Gold</span><code>209</code><span class="stitches">4 088</span></div>
+            <div class="thread"><span class="thread-swatch" style="background:#f2e2c4"></span>
+              <span class="thread-name">Cream</span><code>010</code><span class="stitches">2 934</span></div>
+            <div class="thread"><span class="thread-swatch" style="background:#3f7d4f"></span>
+              <span class="thread-name">Leaf Green</span><code>515</code><span class="stitches">2 106</span></div>
+            <div class="thread"><span class="thread-swatch" style="background:#8d6a3f"></span>
+              <span class="thread-name">Light Brown</span><code>339</code><span class="stitches">1 470</span></div>
+            <div class="thread"><span class="thread-swatch" style="background:#2e2a27"></span>
+              <span class="thread-name">Black</span><code>900</code><span class="stitches">1 012</span></div>
+            <div class="thread"><span class="thread-swatch" style="background:#a8b6c4"></span>
+              <span class="thread-name">Silver</span><code>385</code><span class="stitches">582</span></div>
+          </div>
+
+          <div class="sec-label">Optionen</div>
+          <div class="opt-row">
+            <span class="opt-label">Zielmaschine</span>
+            <span class="select">Brother Innov-is F480</span>
+          </div>
+          <div class="opt-row">
+            <span class="opt-label">Stickrahmen</span>
+            <span class="select">130 × 180 mm</span>
+          </div>
+          <div class="opt-row">
+            <span class="opt-label">Zielformat</span>
+            <span class="select">PES v6 (unverändert)</span>
+          </div>
+          <div class="opt-row">
+            <span class="opt-label">Skalierung</span>
+            <span class="select">100 % · maßhaltig</span>
+          </div>
+          <div class="opt-row">
+            <span class="opt-label">Garnhersteller</span>
+            <span class="select">Brother</span>
+          </div>
+          <div class="opt-row">
+            <span class="opt-label">Farbwechsel-Stopps behalten</span>
+            <span class="switch" data-on="true" role="switch" aria-checked="true" aria-label="Farbwechsel-Stopps behalten"></span>
+          </div>
+          <div class="opt-row">
+            <span class="opt-label">Vernähstiche ergänzen</span>
+            <span class="switch" data-on="false" role="switch" aria-checked="false" aria-label="Vernähstiche ergänzen"></span>
+          </div>
+
+          <div class="fit-note">
+            <svg width="13" height="13" viewBox="0 0 10 10" style="color:var(--kn-ok);flex:0 0 13px" aria-hidden="true"><use href="#stitch"/></svg>
+            <div><b>Passt in den Rahmen.</b> 96 × 132 mm bei 130 × 180 mm Stickfeld — 34 mm Reserve in der Breite, 48 mm in der Höhe.</div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn btn-primary btn-block">Auf USB senden</button>
+            <div class="row2">
+              <button type="button" class="btn">Konvertieren</button>
+              <button type="button" class="btn">Bericht drucken</button>
+            </div>
+          </div>
+
+          <div class="sec-label">Schlagworte</div>
+          <div class="tagline">
+            <span class="tag">weihnachten</span>
+            <span class="tag">stern</span>
+            <span class="tag">vollstickerei</span>
+            <span class="tag" style="border:1px dashed var(--kn-ki);color:var(--kn-ki)">kissen · KI</span>
+            <span class="tag" style="border:1px dashed var(--kn-border-strong)">+ hinzufügen</span>
+          </div>
+
+          <div class="sec-label">Projekte</div>
+          <div class="project-card">
+            <span class="status-dot" style="background:var(--kn-amber)"></span>
+            <div style="min-width:0">
+              <div style="font-weight:700">Adventskissen 2025</div>
+              <div style="font-size:var(--t-xs);color:var(--kn-ink-2)">Leinen natur · 40 × 40 · 6 Stück</div>
+            </div>
+            <span class="status-pill status-progress" style="margin-left:auto">In Arbeit</span>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+    <!-- ══ Statusleiste ══ -->
+    <div class="statusbar">
+      <span class="num">12 847 Muster</span>
+      <span class="num">184 Treffer</span>
+      <span class="num">1 ausgewählt</span>
+      <div class="right">
+        <span class="usb">
+          <svg width="11" height="11" viewBox="0 0 10 10" aria-hidden="true"><use href="#stitch"/></svg>
+          USB KINGSTON · 14,2 GB frei
+        </span>
+        <span>Bibliothek synchron</span>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+  <!-- ══ Referenz ══ -->
+  <section class="ref">
+    <h2>Gestaltungsvariablen</h2>
+    <div class="ref-grid">
+
+      <div class="ref-card">
+        <h3>Flächen</h3>
+        <div class="sw-row"><span class="sw" style="background:var(--kn-bg)"></span>Fenster <code id="c-bg"></code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--kn-surface)"></span>Kachel <code id="c-surface"></code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--kn-surface-2)"></span>Navigation <code id="c-surface2"></code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--kn-surface-3)"></span>Auswahl <code id="c-surface3"></code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--kn-border)"></span>Rahmen <code id="c-border"></code></div>
+      </div>
+
+      <div class="ref-card">
+        <h3>Marke &amp; Zustände</h3>
+        <div class="sw-row"><span class="sw" style="background:var(--kn-brand)"></span>Terracotta <code id="c-brand"></code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--kn-amber)"></span>Bernstein <code id="c-amber"></code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--kn-ok)"></span>Erfolg <code id="c-ok"></code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--kn-warn)"></span>Warnung <code id="c-warn"></code></div>
+        <div class="sw-row"><span class="sw" style="background:var(--kn-ki)"></span>KI-Herkunft <code id="c-ki"></code></div>
+      </div>
+
+      <div class="ref-card">
+        <h3>Schrift</h3>
+        <div class="type-sample">
+          <small>Auszeichnung · Josefin Sans 600</small>
+          <div style="font-family:var(--f-display);font-size:19px;font-weight:600">Weihnachtsstern</div>
+        </div>
+        <div class="type-sample">
+          <small>Fließtext · Lato 400 / 13 px</small>
+          <div>Sechszackiger Stern in Vollstickerei.</div>
+        </div>
+        <div class="type-sample">
+          <small>Maße und Zahlen · IBM Plex Mono</small>
+          <div style="font-family:var(--f-mono)">96 × 132 mm · 18 402 Stiche</div>
+        </div>
+      </div>
+
+      <div class="ref-card">
+        <h3>Signatur: die Naht</h3>
+        <p style="margin:0 0 11px;font-size:var(--t-sm);color:var(--kn-ink-2)">
+          Trennlinien sind genähte Nähte. Die ausgewählte Kachel trägt einen Kreuzstich
+          statt eines Häkchens.</p>
+        <hr class="seam-h" style="margin:12px 0">
+        <div style="display:flex;align-items:center;gap:9px;font-size:var(--t-sm)">
+          <svg width="12" height="12" viewBox="0 0 10 10" style="color:var(--kn-brand)" aria-hidden="true"><use href="#stitch"/></svg>
+          Ausgewähltes Muster
+        </div>
+        <hr class="seam-h" style="margin:12px 0">
+      </div>
+
+    </div>
+
+    <div class="note">
+      <b>Hinweise zur Umsetzung</b>
+      <ul>
+        <li><b>Aufteilung:</b> Links Übersicht und Navigation, Mitte die bildgeführte
+            Musterauswahl mit Name und Größe, rechts alle Details. Die technischen Werte
+            stehen bewusst nur rechts — die Kachel trägt Bild, Name und Größe, mehr nicht.</li>
+        <li><b>Die senkrechte Teilung ist unbedingt.</b> Die drei Bereiche stehen in jeder
+            Fensterbreite nebeneinander. Wird das Fenster schmaler als 860 px, scrollt der
+            Inhalt waagerecht, statt die Spalten übereinander zu klappen — eine gestapelte
+            Notdarstellung gibt es nicht.</li>
+        <li><b>Trenner sind verschiebbar.</b> Die genähten Trennlinien zwischen den Bereichen
+            sind Griffe; die Spaltenbreiten werden je Sitzung gespeichert (SM-SET-003).</li>
+        <li><b>Kachelgröße</b> ist an die Breite der mittleren Spalte gebunden und läuft
+            automatisch um.</li>
+        <li>Die Farbwerte sind aus dem Kreuznaht-Markenstandard rekonstruiert. Vor der
+            Umsetzung gegen <code>theme-standard.json</code> abgleichen — die Variablennamen
+            bleiben dabei gleich.</li>
+        <li>Schriften in der Anwendung als WOFF2 mitliefern; kein Nachladen von einem
+            externen Dienst zur Laufzeit. IBM Plex Mono ist eine Ergänzung für Maße und
+            Zahlen und braucht eine Freigabe.</li>
+        <li><b>Kontraste sind nachgerechnet, nicht geschätzt.</b> Alle Textfarben erreichen in
+            beiden Modi mindestens 4,5:1. Terracotta erscheint als Textfarbe im Hellmodus
+            abgedunkelt, weil <code>#e85d5d</code> auf Creme nur 3,17:1 erreicht.
+            <code>--kn-ink-3</code> ist ausschließlich für deaktivierte Zustände zugelassen und
+            darf nicht für lesbaren Text verwendet werden.</li>
+        <li>KI-erzeugte Inhalte sind doppelt gekennzeichnet — über Farbe <em>und</em> über
+            Text. Farbe allein genügt nicht.</li>
+        <li>Dieses Mockup ist in HTML gebaut, um es hier zeigen zu können. Umgesetzt wird es
+            nach Tech-Stack 2.0 als Qt-Oberfläche; Farbwerte, Abstände und Aufteilung sind
+            eins zu eins übertragbar.</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var bHell = document.getElementById('btn-hell');
+  var bDunkel = document.getElementById('btn-dunkel');
+
+  var map = {
+    'c-bg': '--kn-bg', 'c-surface': '--kn-surface', 'c-surface2': '--kn-surface-2',
+    'c-surface3': '--kn-surface-3', 'c-border': '--kn-border', 'c-brand': '--kn-brand',
+    'c-amber': '--kn-amber', 'c-ok': '--kn-ok', 'c-warn': '--kn-warn', 'c-ki': '--kn-ki'
+  };
+
+  function refreshSwatches() {
+    var cs = getComputedStyle(root);
+    Object.keys(map).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = cs.getPropertyValue(map[id]).trim();
+    });
+  }
+
+  function apply(theme) {
+    root.setAttribute('data-theme', theme);
+    bHell.setAttribute('aria-pressed', String(theme === 'hell'));
+    bDunkel.setAttribute('aria-pressed', String(theme === 'dunkel'));
+    refreshSwatches();
+  }
+
+  bHell.addEventListener('click', function () { apply('hell'); });
+  bDunkel.addEventListener('click', function () { apply('dunkel'); });
+
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  apply(prefersDark ? 'dunkel' : 'hell');
+})();
+</script>
+
+</body>
+</html>
