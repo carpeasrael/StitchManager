@@ -43,8 +43,7 @@ berühren und deshalb gar nicht im Code entschieden werden dürfen.
 | C2-M10 | Das Gate löschte ungetrackte Protokolle unter `Reviews/` ohne Meldung. | — | Jede Entfernung wird auf der Konsole gemeldet und im Protokoll vermerkt. | — |
 | C2-M9 | Stufe 0c meldete PASS, obwohl eine Teilprüfung mangels Werkzeug gar nicht lief. | SM-NFR-012 | `check-docs.sh` zählt entfallene Prüfungen und benennt sie in der Ergebniszeile. | — |
 | N2-7 | Der Prüfumfang hing über `-- .` am Arbeitsverzeichnis statt am Wurzelverzeichnis. | — | `:(top)`. | — |
-
-| T3-1 | **Blocker.** Der Secret-Pfadscan war durch git-Quotierung umgehbar: `git diff --name-only` escapt Nicht-ASCII-Pfade (`"a/\303\234b.md"`), wodurch `(^|/)\.secure/` ins Leere griff. Dieselbe Ursache machte die Größengrenze für Binärdateien und die Cache-Signatur unwirksam und ließ `check-docs.sh` Dateien mit Umlaut lautlos überspringen. | SM-SEC-006, SM-KIA-010 | Alle Pfadlisten laufen über `core.quotePath=false` und `-z`. | H9, H9b, H10 |
+| T3-1 | **Blocker.** Der Secret-Pfadscan war durch git-Quotierung umgehbar: `git diff --name-only` escapt Nicht-ASCII-Pfade (`"a/\303\234b.md"`), wodurch `(^\|/)\.secure/` ins Leere griff. Dieselbe Ursache machte die Größengrenze für Binärdateien und die Cache-Signatur unwirksam und ließ `check-docs.sh` Dateien mit Umlaut lautlos überspringen. | SM-SEC-006, SM-KIA-010 | Alle Pfadlisten laufen über `core.quotePath=false` und `-z`. | H9, H9b, H10 |
 | T3-2 | Ein gitleaks-Treffer wurde durch den Rückfallaufruf überschrieben und damit verworfen. | — | Erfolg, Treffer und Werkzeugfehler sind getrennt; der Rückfall greift nur bei unbekanntem Unterbefehl, jeder andere Fehler blockiert. | — |
 | T3-3 | Die Größe von Binärdateien kam aus dem Arbeitsbaum; eine gestagete, im Arbeitsbaum fehlende Datei lieferte 0. | — | Größe aus dem geprüften Objekt (`git cat-file -s`). | — |
 | T3-5 | Der Regex-Rückfall kannte keine präfixbasierten Zugangsschlüssel. | — | Ergänzt um `sk-ant-`, `sk_live_`/`sk_test_`, `glpat-`, `npm_`, `hf_`, `dop_v1_`. | — |
@@ -205,8 +204,8 @@ vermerkt.
 | N4-7 bis N4-12 | Prozessaufwand in `run_gate`, `check-docs.sh` und `scan_secrets_paths`; totes Array in `collect_scope`; D-10 misst bei 10.000 statt 100.000; Laufzeitzusagen ohne hinterlegte Messung. | minor | offen — Laufzeit, keine Prüflücke |
 | T4-1 | DES-STM-001 Abschnitt 6.4 gegen Abschnitt 7 (Widerspruch in der Zustandsfestlegung). | major | offen — vor Umsetzungsbeginn der Oberfläche |
 | T4-2 bis T4-4 | Nonce, Nachweisbindung und Diffbereich — `CLAUDE.md` gegen Gate und Rollentexte. | major | offen — Analyse 02, Schritte 1, 3 und 4 |
-| T4-5 | `.markdownlint-cli2.jsonc` fehlt, obwohl `CLAUDE.md` Abschnitt 11 sie als vorhanden führt. | major | offen — zweiter Änderungssatz |
-| T4-6 | Prüfbereiche in `check-docs.sh` weichen von Abschnitt 11 ab: `Analysis/` zu viel, `scripts/` zu wenig. | major | offen — zweiter Änderungssatz |
+| T4-5 | `.markdownlint-cli2.jsonc` fehlt, obwohl `CLAUDE.md` Abschnitt 11 sie als vorhanden führt. | major | **behoben** am 24.08.2026 — Konfiguration angelegt, Fassung in `package.json` gebunden, Stufe 0c blockiert bei fehlendem Werkzeug (Selbsttestfall J). Nachweis: `Analysis/20260824_02_markdown-stilpruefung.md` |
+| T4-6 | Prüfbereiche in `check-docs.sh` weichen von Abschnitt 11 ab: `Analysis/` zu viel, `scripts/` zu wenig. | major | **behoben** — `Analysis/` steht seit dem Plan-Änderungssatz in Abschnitt 11, `README.md` seit dem README-Satz, und `sources()` in `scripts/check-docs.sh` erfasst seit dem Werkzeug-Satz auch `*.sh`. Zusage und Prüfumfang decken sich damit |
 | T4-7 | `write_report` gegen die Kopfvorgaben aus Abschnitt 13. | major | offen — Analyse 02, Schritt 2 |
 | T4-8 bis T4-12 | Raster- und Zustandsangaben in DES; unvollständige Stellschraubenliste; drei weitere beschriebene, nicht gebaute Mechanismen; Redaktionsfehler in dieser Analyse. | minor | Redaktionsfehler in diesem Commit behoben, Rest offen |
 | S4-1 | Secret-Scan und Injection-Vorfilter prüfen registrierte Protokolldateien nicht. | major | offen — verwandt mit T-1, vor dem ersten Quellcode-Commit |
@@ -227,7 +226,8 @@ Abschnitt 3 ein Nachweis ohne Bindungswirkung. Wer die Design-Beschreibung aufsc
 an den betroffenen Stellen keinen Hinweis.
 
 Das ist nicht durch diesen Commit zu heilen, weil die Aufnahme weiterer offener Punkte ins
-Register des Lastenhefts eine inhaltliche Dokumentänderung wäre — mit Versionserhöhung, Historieneintrag und
-eigener Analyse nach Phase 1. Der Punkt wird deshalb hier als **erste Aufgabe des
+Register des Lastenhefts eine inhaltliche Dokumentänderung wäre — mit Versionserhöhung,
+Historieneintrag und eigener Analyse nach Phase 1. Der Punkt wird deshalb hier als
+**erste Aufgabe des
 Nachreviews** vermerkt: entweder die drei textnahen Widersprüche (C4-M1 bis C4-M3) direkt
 beheben oder sie als offene Punkte ins Register aufnehmen und in DES-STM-001 darauf verweisen.

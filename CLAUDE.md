@@ -37,10 +37,28 @@ Widerspruch wird gemeldet, nicht ausgelegt.
 
 ## 1. Was dieses Repository ist
 
-**Reines Spezifikations-Repository — es existiert noch kein Quellcode.** Der Bestand besteht
-aus drei abgestimmten Dokumenten plus einem HTML-Mockup, dazu die Gate-Skripte unter
-`scripts/`. Es gibt kein Build-System, keine Testsuite, keine Paketdateien; entsprechend auch
-keine Build-, Lint- oder Testbefehle für Quellcode. Das Mockup ist eine einzelne, in sich
+**Spezifikation und Quellcode.** Der Bestand besteht aus drei abgestimmten Fachdokumenten plus
+einem HTML-Mockup und dem nachgeordneten Implementierungsplan, den Gate-Skripten unter
+`scripts/` — und seit dem 25.08.2026 einem **Quellbaum**: ein Cargo-Werkstattverbund unter
+`crates/` mit einem Rust-Kern und einer Qt-Oberfläche.
+
+**Der Quellbaum schließt keinen offenen Punkt.** Der Auftraggeber hat am 25.08.2026 zugunsten
+von Weg A und der Wiederverwendung des vorhandenen Kerns entschieden; der Nachweis steht in
+`Analysis/20260825_01_anwendungsbau.md`. `Analysis/` ist nach Abschnitt 3 aber **Nachweis, keine
+Quelle**: Maßgeblich bleibt Kapitel 14 des Lastenhefts, und dort sind OP-13 und die Wegfrage
+**noch nicht fortgeschrieben**. Bis das geschehen ist, gilt der Punkt als offen — mit der
+Folge, dass Prüfskripte weiterhin **keinen** Oberflächenweg festlegen dürfen (Abschnitt 11).
+Die Fortschreibung des Registers ist eine inhaltliche Änderung am führenden Dokument und
+gehört in einen eigenen Vorgang mit Version, Historieneintrag und Kopfzeilennachzug
+(Abschnitt 4).
+
+**Zwei Paketdateien mit verschiedenem Zweck, die nicht zu verwechseln sind.** `package.json`
+mit `package-lock.json` bindet **ausschließlich** den Markdown-Linter der Dokumentprüfungen
+und ist **kein Anwendungsbau**; `Cargo.toml` im Wurzelverzeichnis führt den Werkstattverbund
+der Anwendung. Entsprechend gilt: Die Rust-Gates der Stufe 0c sind **nicht** mehr ENTFÄLLT
+(Abschnitt 13, „Anwendbarkeit"), und die Projektregelprüfung hat seither einen Gegenstand.
+
+Das Mockup ist eine einzelne, in sich
 geschlossene HTML-Datei ohne Abhängigkeiten und wird direkt im Browser geöffnet
 (`xdg-open Design/stitchmanager-mockup.html`).
 
@@ -60,18 +78,39 @@ festgelegten Votumsworte `APPROVE` / `CHANGES_REQUESTED`.
 
 ## 2. Befehle
 
-Quellcode existiert noch nicht; das Commit-Freigabe-Gate ist gebaut und läuft:
+Das Commit-Freigabe-Gate ist gebaut und läuft; seit dem Quellbaum kommen die
+Rust-Befehle hinzu:
 
 ```bash
+npm ci                                   # Markdown-Linter holen — einmalig je Klon
 bash scripts/install-hooks.sh            # Hooks installieren — einmalig je Klon
 bash scripts/install-hooks.sh --status   # Zustand anzeigen
 bash scripts/install-hooks.sh --uninstall
 
 bash scripts/review-gate.sh              # Gate von Hand, commit-Tier
 REVIEW_GATE_TIER=push bash scripts/review-gate.sh
-bash scripts/review-gate.test.sh         # Selbsttest, Stufe 0b (~10 s)
-bash scripts/check-docs.sh               # Dokumentprüfungen, Stufe 0c (~0,1 s)
+bash scripts/review-gate.test.sh         # Selbsttest, Stufe 0b (40 s, 137 Fälle)
+bash scripts/check-docs.sh               # Dokumentprüfungen, Stufe 0c (1 s)
+npm run lint:md                          # nur der Markdown-Stil, Teil von check-docs.sh
+bash scripts/check-plan.sh               # Konsistenz des Implementierungsplans, Stufe 0c
+bash scripts/check-plan.test.sh          # dessen Selbsttest, Stufe 0b (1 s, 26 Fälle)
+bash scripts/check-projektregeln.sh      # Projektregeln am Quellbaum, Stufe 0c (< 1 s)
+bash scripts/check-projektregeln.test.sh # dessen Selbsttest, Stufe 0b (12 s, 57 Fälle)
+bash scripts/check-hintergrund.sh        # Messwerkzeug, NICHT im Gate (~40 s)
 ```
+
+**Zu den Laufzeiten.** Die Klammerwerte sind **gemessen**, nicht geschätzt (Abschnitt 13.2 des
+Lastenhefts: Messung statt Einschätzung), und zwar auf Apple Silicon mit warmem Dateisystem-
+zwischenspeicher. Sie sind **Regressionsschwellen, keine Zusagen**: Solange OP-08 kein
+Referenzgerät benennt, gibt es keine Grundlage für eine Zusage. Ein vollständiger Trockenlauf
+über die Stufen 0 bis 0c braucht rund **47 s** — den Hauptteil tragen die drei Selbsttests
+der Stufe 0b, nicht die Dokumentprüfung. Die Einzelwerte oben sind je für sich gemessen und
+addieren sich **nicht** zum Gesamtwert: Im Trockenlauf laufen sie nacheinander gegen einen
+warmen Dateisystemzwischenspeicher.
+
+**Die Werte sind am gelieferten Stand gemessen, nicht fortgeschrieben.** Der Werkzeug-Satz
+vom 26.08.2026 hat den Selbsttestumfang von 82 auf 137 Fälle erhöht und zwei weitere
+0b-Stufen aufgenommen; die vorherigen Klammerwerte trugen für diesen Stand nicht mehr.
 
 Stellschrauben (Vorgabewerte in Klammern): `AGENT_TIMEOUT` (900) · `DIFF_CAP_BYTES` (400000) ·
 `BINARY_MAX_BYTES` (2000000) · `GATE_REVIEWERS` (newton turing tesla curie) ·
@@ -102,6 +141,9 @@ Bei Widersprüchen gilt strikt diese Rangfolge:
    Wie es aussieht und sich verhält; konkretisiert Kapitel 12 des Lastenhefts.
 3. `TechStack/StitchManager_TechStack.md` — **TEC-STM-001**. Womit es gebaut wird.
 4. `Design/stitchmanager-mockup.html` — visuelle Referenz, **keine Umsetzungsvorlage**.
+5. `Implementation/StitchManager_Implementierungsplan.md` — **IMP-STM-001**. Nachgeordnetes
+   Planungsdokument: ordnet Anforderungen Arbeitspaketen und Prüffällen zu. Es begründet
+   keine Anforderung, schränkt keine ein und ist für Sachfragen ohne Bedeutung.
 
 Im Lastenheft referenziert, aber (noch) nicht im Repository: ANA-STM-001
 (Konsolidierungsanalyse, reine Herleitung — **keine Anforderungsquelle**) und ABG-STM-001
@@ -121,8 +163,8 @@ Diese Regeln stehen in den Dokumenten selbst und werden beim Bearbeiten leicht v
 - **Nur das Lastenheft darf Anforderungen begründen.** Ergibt sich beim Gestalten oder bei
   der Technologiewahl eine neue Anforderung, wird sie im Lastenheft aufgenommen und in
   DES/TEC nur referenziert.
-- **Es gibt genau ein Register offener Punkte:** Kapitel 14 des Lastenhefts (OP-01 … OP-13).
-  DES-STM-001 und TEC-STM-001 führen bewusst keine eigene Nummerierung, sondern verweisen
+- **Es gibt genau ein Register offener Punkte:** Kapitel 14 des Lastenhefts, dort fortlaufend
+  geführt. DES-STM-001 und TEC-STM-001 führen bewusst keine eigene Nummerierung, sondern verweisen
   dorthin. Kein neues Register anlegen.
 - **Befunde B-01 … B-13** stammen aus ANA-STM-001 und sind Befunde am Altbestand, **keine
   Anforderungen**. Nicht als solche behandeln.
@@ -160,7 +202,7 @@ Nutzerverwaltung.
 
 ## 6. Technische Zielarchitektur (TEC-STM-001 v2.2)
 
-```
+```text
 Qt 6 (LGPL-3)  ── Oberfläche, Qt PDF (Anzeige), QPrinter (maßhaltiger Druck)
       │  cxx-qt (Weg A, empfohlen)  oder  PySide6 + PyO3 (Weg B)
 Rust-Kern      ── parsers/ writers/ render/ db/ services/ security/
@@ -219,11 +261,18 @@ nicht verhandelbar formuliert:
   **OP-04** (Paketsignatur), **OP-05** (entfernte KI-Anbindung), **OP-06** (Produktname),
   **OP-07** (Freigabe der Festbreitenschrift), **OP-08** (Referenzgerät für Messungen),
   **OP-09** bis **OP-12** (Gestaltungsdetails).
+- **OP-14** (Geltung von SM-FMT-012 und SM-SEC-011 für die Anzeige von Fremddokumenten),
+  **OP-15** bis **OP-17** und **OP-20** (Zustände je Bildschirm, Zustandstabelle und
+  Mindestgrößen, Übersichtskarte, Sammelaktionen der Hinweisbox — je Verhalten, das
+  DES-STM-001 verbindlich beschreibt, ohne dass das Lastenheft eine Kennung dafür führt),
+  **OP-18** (Schwellenwerte für zwei Messanforderungen), **OP-19** (Fortbestehen der
+  Darstellungswahl über den Neustart), **OP-21** (Obergrenze und Verdrängung
+  des Vorschau-Zwischenspeichers).
 
 ### Was ein offener Punkt blockiert — und was nicht
 
 „Kein offener Punkt wird stillschweigend im Code entschieden" darf nicht bedeuten, dass bis
-zur Klärung aller dreizehn Punkte gar nichts geschehen kann. Maßgeblich ist die **Wirkung**
+zur Klärung sämtlicher offener Punkte gar nichts geschehen kann. Maßgeblich ist die **Wirkung**
 der Änderung, nicht die bloße Berührung:
 
 | Fall | Wirkung |
@@ -242,8 +291,8 @@ steht im Protokollkopf; im Zweifel gilt die höhere Klasse.
 | Klasse | Definition (alle Bedingungen) | Analyse | Gates |
 |---|---|---|---|
 | **T** — redaktionell | Nur Rechtschreibung, Zeichensetzung, Umbruch, Formatierung, Linkziel. **Keine** `SM-…`/`AK-…`/`OP-…`-Kennung hinzugefügt, entfernt oder umgehängt; keine Zeile in `scripts/`, `.claude/`, `CLAUDE.md`, `LICENSE`; höchstens 20 geänderte Zeilen. | entfällt | 0, 0b, 0c |
-| **D** — Dokument, inhaltlich | Änderung an einem der drei Fachdokumente oder am Mockup | Pflicht | 0, 0b, 0c, 1 |
-| **C** — Quellcode | Jede Änderung unter dem künftigen Quellbaum | Pflicht | 0, 0b, 0c, 1 (+2 im push-Tier) |
+| **D** — Dokument, inhaltlich | Änderung an einem der drei Fachdokumente, am Mockup oder an `Implementation/` | Pflicht | 0, 0b, 0c, 1 |
+| **C** — Quellcode | Jede Änderung unter `crates/` oder an `Cargo.toml`/`Cargo.lock` | Pflicht | 0, 0b, 0c, 1 (+2 im push-Tier) |
 | **G** — Werkzeug und Regeln | `scripts/`, `.claude/`, `CLAUDE.md`, Wurzelkonfiguration, unbekannte Pfade | Pflicht | alle zutreffenden, zusätzlich 0b zwingend |
 
 Klasse T ist kein Ermessensspielraum, sondern eine Prüfbedingung: Trifft eine Bedingung nicht
@@ -309,32 +358,58 @@ spart mehrere vollständige Runden.
 
 ## 11. Lint- und Prüfkette
 
-Die Kette ist zweigeteilt: was **heute** läuft (das Repository enthält nur Dokumente) und was
-**mit dem ersten Quellcode** dazukommt. Beides gehört in dieselbe CI-Stufe; SM-NFR-012 verlangt
-automatisierte Prüfung, nicht Sichtprüfung.
+Die Kette ist zweigeteilt: die **Dokumentprüfungen**, die seit jeher laufen, und die
+**Quellcodeprüfungen**, die seit dem Quellbaum vom 25.08.2026 gelten. Beide sind heute
+anwendbar; die Rust-Gates stehen nicht mehr als ENTFÄLLT. Beides gehört in dieselbe
+CI-Stufe; SM-NFR-012 verlangt automatisierte Prüfung, nicht Sichtprüfung.
 
 **Prüfbereiche.** Stil- und Konsistenzprüfungen laufen über `Requirements/`, `Design/`,
-`TechStack/`, `CLAUDE.md` und `scripts/`. `Reviews/` und `Analysis/` sind Nachweise: Dort
-laufen nur Secret-Scan und Namensschema-Prüfung. Andernfalls würde ein Protokoll, das einen
-Befund korrekt zitiert (etwa ein Farbliteral oder eine gestrichene Kennung), genau dadurch
-das nächste Gate rot färben.
+`TechStack/`, `Implementation/`, `Analysis/`, `README.md`, `CLAUDE.md` und `scripts/`.
+Die Schaltdateien unter `scripts/` sind dabei kein Sonderfall mehr: `sources()` in
+`scripts/check-docs.sh` bildet seinen Bereich aus der Erweiterungsliste `KN_QUELL_EXT` der
+gemeinsamen Regelbibliothek (`qml`, `py`, `css`, `qss`, `ui`, `js`, `ts` — die
+gestaltungstragenden Arten **beider** Wege) zuzüglich `rs`, `sh` und `html`. Die Liste steht
+damit einmal im Baum, und der Prüfumfang stimmt mit der Aussage dieses Absatzes überein.
+`Analysis/` läuft mit, weil ein Analysedokument Kennungen referenziert und Verweise setzt.
+`README.md` läuft mit, weil `scripts/check-docs.sh` seinen Prüfbereich über alle verfolgten
+Markdown-Dateien außer `Reviews/` bildet — die Aufzählung nennt damit, was das Skript ohnehin
+prüft, statt hinter ihm zurückzubleiben. **`Reviews/` ist von den Stil- und
+Konsistenzprüfungen ausgenommen — Secret-Scan und Namensschema-Prüfung laufen dort
+unverändert.** Ohne die Ausnahme würde ein Protokoll, das einen Befund korrekt zitiert (etwa
+ein Farbliteral oder eine gestrichene Kennung), genau dadurch das nächste Gate rot färben.
 
 **Konfiguration liegt im Repository.** `.markdownlint-cli2.jsonc` legt fest: Zeilenlänge 100
 für Fließtext, **ausgenommen Tabellen und Codeblöcke** (`MD013: tables:false, code_blocks:false`).
-Ohne diese Ausnahme verletzt diese Datei ihre eigene Regel.
+Ohne diese Ausnahme verletzt diese Datei ihre eigene Regel. Abgeschaltet ist dort außerdem
+**MD060** (Tabellenspaltenstil) — begründet in derselben Datei: Die Regel bewertet die
+Polsterung der Trennstriche, ist erst in einer neueren Fassung des Werkzeugs hinzugekommen und
+fände den gesamten Bestand anders gesetzt vor. Jede weitere Abschaltung trägt ihren Grund
+ebenso in der Konfigurationsdatei; eine unbegründete ist ein Review-Befund.
 
-### Heute anwendbar — Dokumente und Mockup
+**Die Werkzeugfassung ist gebunden.** `package.json` führt `markdownlint-cli2` in einer festen
+Fassung als Entwicklungsabhängigkeit, `package-lock.json` liegt mit im Baum. Bezugsweg ist
+`npm ci` im Wurzelverzeichnis; `scripts/check-docs.sh` bevorzugt die lokale Installation
+unter `node_modules/.bin/` vor einer globalen. Grund für die Bindung: Eine ungebundene Fassung
+kann über Nacht neue Regeln mitbringen und das Gate rot färben, ohne dass sich eine Zeile im
+Repository geändert hätte — MD060 hat genau das vorgeführt
+(`Analysis/20260824_02_markdown-stilpruefung.md`). **Fehlt das Werkzeug, ist das FAIL, nicht
+ENTFÄLLT:** Markdown-Dateien liegen immer im Baum, der Gegenstand der Prüfung existiert also
+(S3). Der Selbsttest hält das in Fall J fest.
+
+### Dokumente und Mockup
 
 | Prüfung | Werkzeug / Befehl | Prüft |
 |---|---|---|
-| Markdown-Stil | `markdownlint-cli2` mit der Konfiguration im Wurzelverzeichnis | Überschriftenfolge, Tabellensyntax, Zeilenlänge |
+| Markdown-Stil | `npm run lint:md` — ruft `markdownlint-cli2 "**/*.md" "!Reviews/**"` mit `.markdownlint-cli2.jsonc` auf; Fassung gebunden in `package.json` | Überschriftenfolge, Tabellensyntax, Zeilenlänge, Sprachangabe an Codeblöcken |
 | Tote Anforderungsverweise | `SM-[A-Z]{3}-[0-9]{3}` über die Prüfbereiche gegen die Kennungen des Lastenhefts | Jede referenzierte Kennung existiert; gestrichene sind als `~~…~~` markiert und dürfen referenziert werden |
 | Kennungs-Wiederverwendung | Doppelte **Definitionen** (erste Tabellenspalte) in URS-STM-001 | Kennungen werden nie neu vergeben. Mehrfache *Erwähnung* ist erlaubt und kein Befund |
 | Versionsabgleich | Kopfzeilen „Mitgeltend" gegen die tatsächlichen Dokumentversionen im Endzustand des Commits | Die drei Dokumente verweisen auf den Stand, gegen den sie abgestimmt wurden |
 | Zweitregister | `OP-[0-9]` in `Design/` und `TechStack/` | DES/TEC verweisen nur, führen keine eigene Nummerierung |
-| Farbliterale | `#[0-9a-fA-F]{6}` außerhalb des `:root`-Blocks des Mockups und außerhalb Abschnitt 3 von DES-STM-001 | Vorwegnahme von D-05 |
+| Gestaltungsliterale | Regeln und Muster stehen **einmal** im Baum, in `scripts/lib/gestaltung.sh`; `check-docs.sh` und `check-projektregeln.sh` binden dieselbe Datei ein. Erfasst sind Farbe (Hex drei-, sechs- und achtstellig, benannte Farben, `rgb()`/`Qt.rgba()`/`darker()`), Schrift, Maß, Abstand, Schriftgrad, Zeilenhöhe, Strichstärke und Bewegungsdauer — bei Zuweisung mit `:` oder `=`, in eigenen `property`-Deklarationen mit gestaltungsnahem Namen und in der Methodenform (`setSpacing(8)`, Weg B). **Umfang:** Die Farbklasse gilt baumweit, die übrigen Klassen nur unterhalb des in `.projektregeln.conf` benannten `oberflaeche`-Pfads — D-05 gilt dem Komponentencode, nicht dem Kern und nicht der Prosa. In `*.md` ist `#` gefolgt von reinen Ziffern (Vorgangsbezug) oder ohne Zuweisung kein Farbwert. Das Mockup ist **dateiweit** ausgenommen, weil Inhalts- und Themenfarben dort nicht getrennt sind (Restrisiko in `Analysis/20260823_01_gate-befunde-rueckstand.md`). Ausnahme je Zeile: `D-05-Ausnahme: <Grund>` — **mit** Begründung, eine nackte Markierung zählt nicht | Vorwegnahme von D-05 |
+| Lizenzen und Herkunft der npm-Kette | `scripts/lib/lizenzen.py`, aufgerufen aus `scripts/check-docs.sh`; Positivliste in `.lizenzen.conf` | Jede Lizenz steht auf der Positivliste (SPDX-Ausdrücke werden zerlegt: bei `OR` genügt eine zulässige Alternative, bei `AND` müssen alle zulässig sein, `WITH` bindet an die Lizenz davor). Jeder Eintrag nennt `resolved` auf `registry.npmjs.org` und eine `integrity`-Prüfsumme (SM-OSS-011). `lockfileVersion` muss 2 oder 3 sein — Fassung 1 führt die Pakete anderswo und wäre still ungeprüft. Erweitert wird die Liste durch einen **begründeten** Eintrag, nie durch Lockern der Prüfung; eine begründete Herkunfts-Ausnahme lautet `herkunft <paket>  # <Grund>` |
+| Konsistenz des Implementierungsplans | `scripts/check-plan.sh` (Selbsttest: `--selftest`) | Umfang gegen Zurückstellung · Arbeitspaket gegen Matrix · Zuordnung gegen Mitwirkung · Zählwerte gegen Matrix und Lastenheft · Prüffälle gegen Schema und Matrix · **Unterfallmenge aus Abschnitt 6.1 gegen die Matrix** · Zeilenlänge im Fließtext · offene Punkte definiert und im Entscheidungsgatter · ausgeschriebene Zahlwörter · Auszeichnungsschäden je Absatz, einschließlich stehen gebliebener Artikel · Befundtabelle je beschriebener Prüfrunde · **Zählwerte der `README.md` gegen Lastenheft und Plan**. Die Aufzählung trägt bewusst **keine** Anzahl — eine mitgezählte Zahl altert bei der nächsten Bedingung. Fehlt der Plan, meldet die Prüfung **ENTFÄLLT** (Exit 3), nie PASS |
 
-### Mit dem ersten Quellcode verbindlich
+### Quellcode — seit dem Quellbaum verbindlich
 
 | Schicht | Befehl | Regel |
 |---|---|---|
@@ -345,11 +420,50 @@ Ohne diese Ausnahme verletzt diese Datei ihre eigene Regel.
 | Fuzzing | `cargo fuzz run <ziel>` | Je Formatparser ein Ziel, dauerhaft (SM-SEC-011, SM-FMT-012) |
 | QML (Weg A) | `qmllint`, `qmlformat -n` | Nur falls cxx-qt gewählt wird |
 | Python (Weg B) | `ruff check` · `ruff format --check` · `mypy` | Nur falls PySide6 gewählt wird |
-| Projektregeln | eigenes Skript in der CI | D-05, SM-PLT-007 (Versionsgleichheit), SM-SEC-005 (keine Zeichenkettenverkettung in Abfragen) |
+| Projektregeln | `scripts/check-projektregeln.sh` (Stufe 0c), Selbsttest `scripts/check-projektregeln.test.sh` (Stufe 0b) | **Fünf** Regeln: D-05/SM-DES-003 (kein Gestaltungsliteral außerhalb der Gestaltungsquelle, Umfang siehe Zeile Gestaltungsliterale), SM-SEC-004 (die Oberfläche kennt weder die Datenhaltung noch einen Datenbanktreiber — beide Namenslisten stehen in `.projektregeln.conf`), SM-SEC-005 (kein Wert im Abfragetext; begründungspflichtig ist auch ein Abfragetext aus einer Variablen, Ausnahme `SM-SEC-005-Ausnahme: <Grund>` in derselben oder der unmittelbar vorangehenden Kommentarzeile), SM-OSS-011 (`.npmrc` führt `ignore-scripts=true` und **keine** weitere Direktive — eine Umleitung der Bezugsquelle oder ein Zugangstoken wäre sonst nicht zu sehen), SM-PLT-007 (Versionsgleichheit) |
 
 Diese Zeile ergänzt Abschnitt 12: Sobald ein Rust-Projekt existiert, gehören zusätzlich
 CycloneDX-Stückliste je Veröffentlichung und CodeQL in die Kette (TEC-STM-001 Abschnitt 4
 und 7.3).
+
+**Ein Messwerkzeug außerhalb des Gates.** `scripts/check-hintergrund.sh` prüft SM-NFR-002 an
+der **laufenden** Anwendung: Es baut sie, erzeugt einen Prüfbestand und misst die Takte eines
+Zeitgebers im Oberflächenfaden gegen die Wanduhrzeit. Es steht bewusst **nicht** in Stufe 0c
+und geht nicht in die Gate-Signatur ein — es braucht einen vollständigen Bau und rund vierzig
+Sekunden je Lauf, und ein Gate, das das je Commit verlangt, wird umgangen statt befolgt. Es
+läuft **je Veröffentlichung und bei Änderungen am Faden- oder Importweg**, und sein Ergebnis
+gehört in die Rückverfolgbarkeitsmatrix — **aber nur, wenn es an der Bezugsmenge gemessen hat**:
+SM-LIB-009, SM-NFR-001 und AK-01 nennen 100.000 Einträge. Ein Lauf mit
+`SM_PRUEFBESTAND_ANZAHL` darunter ist eine **Kurzprüfung**; das Werkzeug weist ihn als solche
+aus und sein Ergebnis ist keine Abnahme. **SM-NFR-004** (fünf Sekunden bis bedienbereit bei
+100.000) erfasst es nicht — dafür fehlt bis heute ein Nachweis. Anwendbarkeit: Rückgabewert 3
+(ENTFÄLLT), solange keine Oberfläche im Baum ist; sonst PASS/FAIL. Seine Pfade liest es aus
+`.projektregeln.conf`, nicht aus dem Skript.
+
+**Wie die Projektregelprüfung technologiefrei bleibt.** Die Wegwahl ist im führenden Register
+noch nicht fortgeschrieben (Abschnitt 1), und Kapitel 3 des Plans hält fest, die Modulnamen
+seien „logisch, nicht als Pfade zu lesen". Ein Prüfskript, das QML oder ein Kistenlayout fest
+kodiert, entschiede damit den offenen Punkt und blockierte unter dem anderen Weg jeden
+Commit ohne Ausweg (S1). Deshalb gilt dreierlei:
+
+- Die **Gestaltungsquelle deklariert sich selbst** über die Markierung
+  `GESTALTUNGSQUELLE` in der Datei. SM-DES-003 verlangt genau eine; keine und mehrere
+  sind beides ein Befund.
+- Die **Zuordnung logischer Module auf Pfade** steht in `.projektregeln.conf` im
+  Wurzelverzeichnis, nicht im Skript. Dasselbe gilt für jedes weitere Prüf- und
+  Messwerkzeug: Dieselbe Frage zweimal zu beantworten führt unter einem anderen
+  Oberflächenweg zu zwei Wahrheiten.
+- **`.npmrc`** schaltet die Installationsskripte der Fremdpakete ab
+  (`ignore-scripts=true`, SM-OSS-011) und geht in die Gate-Signatur ein: Wer sie
+  ändert, bekommt kein altes Ergebnis aus dem Cache. Fehlt sie, während eine npm-Abhängigkeitskette
+  im Baum liegt, blockiert die Prüfung; liegt keine Kette vor, entfällt sie
+  (Rückgabewert 3). Maßgeblich ist die Kette, nicht der Quellbaum: `.npmrc`
+  steuert `npm`, nicht `cargo`.
+- Einzelne **Datenfarben** — etwa Garnpaletten der Stickformate — werden in derselben
+  Zeile mit `D-05-Ausnahme: <Grund>` begründet, ebenso Abfragen mit
+  `SM-SEC-005-Ausnahme: <Grund>`. Die Markierung gilt für **eine Zeile**, nie für eine
+  Datei oder ein Verzeichnis — dieselbe Auflage wie für bewusste Ausnahmen beim
+  Secret-Scan (Abschnitt 12).
 
 **Regeln für den Umgang mit dem Linter:**
 
@@ -391,8 +505,15 @@ zutreffenden Gates grün sind.
 
 **Umsetzung.** `scripts/review-gate.sh` führt den Ablauf aus, `scripts/install-hooks.sh`
 verdrahtet ihn als `pre-commit` und `pre-push`, `scripts/review-gate.test.sh` ist der
-Selbsttest der Stufe 0b und `scripts/check-docs.sh` sind die deterministischen
-Dokumentprüfungen der Stufe 0c. Die Protokolle landen unter `Reviews/`.
+Selbsttest der Stufe 0b, `scripts/check-docs.sh` sind die deterministischen Dokumentprüfungen
+der Stufe 0c und `scripts/check-plan.sh` deren Teil für den Implementierungsplan; sein
+Selbsttest `scripts/check-plan.test.sh` läuft in Stufe 0b mit. `scripts/check-projektregeln.sh`
+prüft die Projektregeln am Quellbaum (Abschnitt 11) und entfällt mit Rückgabewert 3, solange
+es keinen gibt; sein Selbsttest `scripts/check-projektregeln.test.sh` läuft ebenfalls in
+Stufe 0b mit. **Rückgabewert 3 heißt ENTFÄLLT und steht so im Protokoll, nie als PASS.** Alle
+Skripte gehen in die
+Gate-Signatur ein — eine geänderte Prüflogik gibt kein altes Ergebnis aus dem Cache
+zurück. Die Protokolle landen unter `Reviews/`.
 
 **Geltungsbereich — ehrlich, nicht suggestiv.** Ein Git-Hook ist client-seitig, wird je Klon
 von Hand installiert und hat dokumentierte Ausstiege. Die Protokolle unter `Reviews/` sind
@@ -464,7 +585,7 @@ ersten Ausstiegs — sie werden genau so protokolliert und ziehen eine Nachprüf
 
 Billig vor teuer, fail-fast:
 
-```
+```text
 0  Secret-Scan + Vorfilter   →  0b  Gate-Selbsttest  →  0c  deterministische Schnell-Gates
                             →  1   Vier-Augen-Konsens  →  2  schwere Gates
 ```
@@ -795,6 +916,14 @@ Beobachtungen aus allen Stufen werden dokumentiert. Je Befund:
 - **Schweregrad** — blocker / major / minor / beobachtung.
 - **Fix-Vorschlag** — konkret, idealerweise mit Diff-Skizze. Nicht nur das Problem benennen.
 - **Status** — offen / behoben / akzeptiertes Risiko mit Begründung.
+
+**Rote Protokolle werden nicht committet — ihre Befunde gehen dadurch nicht verloren.** Die
+blocker- und major-Befunde eines nicht committeten roten Protokolls werden in tabellarischer
+Kurzform in das zugehörige `Analysis/`-Dokument übernommen; minor-Befunde werden je Runde
+gezählt und zusammengefasst. Die Übernahme nennt **Ort, Kennung, Schweregrad und Status — nie
+den beanstandeten Wert selbst**; sonst trüge das Analysedokument genau den Inhalt, dessentwegen
+der Befund entstand, in einen Prüfbereich hinein. Ohne diese Regel stünden die
+Dokumentationspflicht dieses Abschnitts und das Commit-Verbot gegeneinander (S1).
 
 Ablage: `Reviews/<yyyymmdd>-<hhmmss>_<branch>.md` (Namensbereinigung siehe oben). Der Commit
 erfolgt erst, wenn alle blocker- und major-Befunde **mit Änderungsbezug** behoben sind;

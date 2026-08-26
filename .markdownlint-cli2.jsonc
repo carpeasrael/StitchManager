@@ -1,0 +1,30 @@
+// Konfiguration der Markdown-Stilprüfung — Stufe 0c des Commit-Freigabe-Gates.
+// `CLAUDE.md` Abschnitt 11 beschreibt diese Datei; sie ist deren Umsetzung.
+// Jede abgeschaltete Regel trägt hier ihren Grund: Eine unbegründete
+// Unterdrückung ist nach Abschnitt 11 ein Review-Befund.
+{
+  "config": {
+    // Zeilenlänge 100 im Fließtext. Tabellen und Codeblöcke sind ausgenommen —
+    // die Fachdokumente sind durchgehend tabellarisch gesetzt, und ein Umbruch
+    // innerhalb einer Tabellenzelle ist in Markdown nicht darstellbar.
+    "MD013": {
+      "line_length": 100,
+      "tables": false,
+      "code_blocks": false
+    },
+
+    // MD060 (Tabellenspaltenstil) ist abgeschaltet. Grund: Die Regel bewertet die
+    // Polsterung der Trennstriche und ist erst in einer neueren Fassung des
+    // Werkzeugs hinzugekommen. Der gesamte Bestand ist anders gesetzt — 903
+    // Fundstellen, gemessen in `Analysis/20260824_02_markdown-stilpruefung.md`.
+    // Eine Angleichung beträfe jede Tabelle in allen vier Fachdokumenten, ohne
+    // fachlichen Gehalt, und risse die Kappungsgrenze DIFF_CAP_BYTES.
+    "MD060": false
+  },
+
+  // Deckungsgleich mit dem Aufruf in `scripts/check-docs.sh`. `Reviews/` ist von
+  // den Stilprüfungen ausgenommen (CLAUDE.md Abschnitt 11); `node_modules/` ist
+  // Fremdbestand und wird nie geprüft.
+  "globs": ["**/*.md", "!Reviews/**"],
+  "ignores": ["node_modules/**", ".git/**"]
+}

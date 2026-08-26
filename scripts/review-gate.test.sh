@@ -184,7 +184,34 @@ make_repo() {   # $1 = Name → gibt den Pfad aus
   git -C "$d" config commit.gpgsign false
   cp "$GATE" "$d/scripts/review-gate.sh"
   cp "$ROOT/scripts/check-docs.sh" "$d/scripts/check-docs.sh" 2>/dev/null || true
+  # Die Projektregelprüfung gehört seit Stufe 0c zur Kette. Fehlte sie im
+  # Prüfrepo, blockierte das Gate dort aus einem Grund, den der Prüffall gar
+  # nicht untersucht.
+  cp "$ROOT/scripts/check-projektregeln.sh" "$d/scripts/check-projektregeln.sh" 2>/dev/null || true
+  # Auch der Selbsttest: Ohne ihn ist der zugehörige Zweig in jedem Prüfrepo
+  # tot und würde vom Selbsttest nie durchlaufen.
+  cp "$ROOT/scripts/check-projektregeln.test.sh" "$d/scripts/check-projektregeln.test.sh" 2>/dev/null || true
+  # Gemeinsame Regeln und Positivliste. Ohne sie meldet `check-docs.sh` im
+  # Prüfrepo FAIL wegen fehlender Bibliothek — und der Fall prüfte nie das,
+  # worum es ihm geht.
+  mkdir -p "$d/scripts/lib"
+  cp "$ROOT/scripts/lib/gestaltung.sh" "$d/scripts/lib/gestaltung.sh" 2>/dev/null || true
+  cp "$ROOT/scripts/lib/lizenzen.py"  "$d/scripts/lib/lizenzen.py"  2>/dev/null || true
+  cp "$ROOT/.lizenzen.conf" "$d/.lizenzen.conf" 2>/dev/null || true
   chmod +x "$d/scripts/"*.sh
+  # Nachgebildeter Markdown-Linter. Seit der Umstellung auf S3 blockiert ein
+  # fehlendes Werkzeug (Fall J), und ohne diese Nachbildung fiele jedes Prüfrepo
+  # schon in Stufe 0c aus — geprüft würde dann nie die Sache, um die es geht.
+  # Fall J entfernt die Nachbildung eigens wieder.
+  mkdir -p "$d/node_modules/.bin"
+  printf '#!/bin/sh\nexit 0\n' > "$d/node_modules/.bin/markdownlint-cli2"
+  chmod +x "$d/node_modules/.bin/markdownlint-cli2"
+  # Wie im echten Baum: `node_modules/` ist nicht versioniert. Ohne diese
+  # Zeile nähme `git add -A` die Nachbildung mit auf, und `check-docs.sh`
+  # lehnte sie zu Recht ab — ein versioniertes `node_modules/` ist nie
+  # legitim. Die Prüfrepos fielen dann in Stufe 0c aus, und geprüft würde nie
+  # die Sache, um die es dem jeweiligen Fall geht.
+  printf 'node_modules/\n' > "$d/.gitignore"
   echo "Ausgangsstand" > "$d/README.md"
   git -C "$d" add -A >/dev/null 2>&1
   git -C "$d" commit -qm "Ausgangsstand" >/dev/null 2>&1
@@ -411,6 +438,576 @@ d="$(make_repo umlaut_ok)"; make_cli "$TMPROOT/cli-u" approve
 echo "Inhalt" > "$d/Größenübersicht.md"; git -C "$d" add -A
 is "H10 harmloser Umlautpfad läuft durch" "0" \
    "$(run_gate "$d" REVIEW_GATE_CLI="$TMPROOT/cli-u")"
+
+# ── I · Selbsttests der hauseigenen Prüfer als eigene 0b-Stufen ────────────
+#
+# Ein Prüfer, dessen Verdrahtung nie geprüft wird, degradiert unbemerkt zum
+# No-Op. Beide Schwester-Selbsttests hängen an **derselben** Funktion
+# (`stage0b_selbsttest`); zuvor war der eine eine eigene Stufe und der andere
+# ein Fall innerhalb dieses Skripts, und die S3-Regel „Prüfer im Baum,
+# Selbsttest fehlt → FAIL" galt nur der einen Hälfte.
+r=1
+while IFS= read -r zeile; do
+  case "$zeile" in *"stage0b_plan || failed=1"*) r=0 ;; esac
+done < "$GATE"
+is "I1 der Planprüfer-Selbsttest ist eine eigene 0b-Stufe" "0" "$r"
+
+r=1
+while IFS= read -r zeile; do
+  case "$zeile" in *"stage0b_selbsttest \"Planprüfungen\""*) r=0 ;; esac
+done < "$GATE"
+is "I1b und teilt sich die Verdrahtung mit der Schwester" "0" "$r"
+
+# Fehlt der Selbsttest zu einem vorhandenen Prüfer, ist das FAIL, nicht
+# ENTFÄLLT — für **beide** Prüfer.
+d="$(make_repo plan_ohne_selbsttest)"
+cp "$ROOT/scripts/check-plan.sh" "$d/scripts/check-plan.sh" 2>/dev/null || true
+rm -f "$d/scripts/check-plan.test.sh"
+echo "Änderung" >> "$d/README.md"; git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && REVIEW_GATE_CLI="$TMPROOT/cli-ok" bash ./scripts/review-gate.sh 2>&1)"; rc=$?
+is "I2 fehlender Planprüfer-Selbsttest blockiert" "1" "$rc"
+case "$out" in *"Selbsttest"*) r=0 ;; *) r=1 ;; esac
+is "I2b und die Meldung nennt ihn" "0" "$r"
+
+# ── J · Markdown-Stil: fehlendes Werkzeug blockiert, es entfällt nicht ─────
+# S3 nach CLAUDE.md: Der Gegenstand — Markdown-Dateien — existiert immer, also gibt
+# es hier kein ENTFÄLLT. Ohne diesen Fall fiele die Umstellung von skip auf FAIL beim
+# nächsten Umbau lautlos zurück, und ein grünes Gate hieße wieder "nicht geprüft".
+# Der eingeschränkte PATH stellt die Lage her, statt sie vorauszusetzen: Weder die
+# lokale Installation unter node_modules/ noch eine globale ist dort erreichbar.
+d="$(make_repo mdlint_fehlt)"
+rm -rf "$d/node_modules"          # die Nachbildung aus make_repo gerade nicht
+printf '# Titel\n\nText.\n' > "$d/beispiel.md"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && PATH=/usr/bin:/bin bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "J1 fehlendes markdownlint-cli2 blockiert" "1" "$rc"
+case "$out" in *"markdownlint-cli2 fehlt"*) r=0 ;; *) r=1 ;; esac
+is "J1b und nennt den Installationsweg" "0" "$r"
+case "$out" in *"– Markdown-Stil"*) r=1 ;; *) r=0 ;; esac
+is "J1c und meldet die Prüfung nicht als entfallen" "0" "$r"
+
+# Gegenstueck: Plan im Baum, Planpruefer fehlt. Auch das ist FAIL, nicht ENTFÄLLT —
+# sonst schaltete ein versehentlich entfernter Pruefer alle Planbedingungen still ab.
+d="$(make_repo planpruefer_fehlt)"
+mkdir -p "$d/Implementation"
+printf '# Plan\n\nText.\n' > "$d/Implementation/StitchManager_Implementierungsplan.md"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "J2 fehlender Planprüfer bei vorhandenem Plan blockiert" "1" "$rc"
+case "$out" in *"scripts/check-plan.sh fehlt"*) r=0 ;; *) r=1 ;; esac
+is "J2b und benennt den fehlenden Prüfer" "0" "$r"
+
+# ── K · Rückgabewert 3 heißt ENTFÄLLT, nicht PASS ───────────────────────
+# CLAUDE.md Abschnitt 13, "Anwendbarkeit": "ENTFÄLLT steht namentlich im
+# Protokoll, nie als PASS." Ohne diesen Fall koennte run_gate einen Pruefer,
+# der seinen Gegenstand gar nicht gefunden hat, als bestanden protokollieren —
+# genau die Klasse, die fuer check-plan.sh schon zweimal gemeldet wurde.
+# Voller Lauf mit Reviewer-Attrappen: Im Trockenlauf entsteht bewusst kein
+# Protokoll, und ohne Protokollzeile ist die Aussage „steht als ENTFÄLLT" nicht
+# prüfbar — der frühere Fall war leer erfüllt. Eine `.rs`-Datei im
+# Änderungssatz setzt den Codebezug, sonst entfiele die Prüfung schon deshalb.
+d="$(make_repo entfällt_ist_kein_pass)"
+cat > "$d/scripts/check-projektregeln.sh" <<'PR'
+#!/usr/bin/env bash
+echo "check-projektregeln: ENTFÄLLT — kein Quellbaum und keine Zuordnung"
+exit 3
+PR
+chmod +x "$d/scripts/check-projektregeln.sh"
+make_cli "$TMPROOT/cli-k" approve
+printf 'fn main() {}\n' > "$d/beispiel.rs"
+git -C "$d" add -A >/dev/null 2>&1
+rc="$(run_gate "$d" REVIEW_GATE_CLI="$TMPROOT/cli-k" FAKE_CALLS="$TMPROOT/callsk")"
+is "K1 Rückgabewert 3 blockiert das Gate nicht" "0" "$rc"
+repk="$(ls -1 "$d/Reviews"/*.md 2>/dev/null | head -1)"
+zeile="$(grep -E '^\| 0c Projektregeln \|' "$repk" 2>/dev/null || true)"
+case "$zeile" in *ENTFÄLLT*) r=0 ;; *) r=1 ;; esac
+is "K2 und steht als ENTFÄLLT in der eigenen Zeile" "0" "$r"
+case "$zeile" in *PASS*) r=1 ;; *) r=0 ;; esac
+is "K2b und nicht als PASS" "0" "$r"
+
+# Gegenstueck: Rückgabewert 1 blockiert weiterhin.
+d="$(make_repo projektregeln_rot)"
+cat > "$d/scripts/check-projektregeln.sh" <<'PR'
+#!/usr/bin/env bash
+echo "check-projektregeln: FAIL — 1 Befund(e)"
+exit 1
+PR
+chmod +x "$d/scripts/check-projektregeln.sh"
+printf 'fn main() {}\n' > "$d/beispiel.rs"
+git -C "$d" add -A >/dev/null 2>&1
+rc="$(run_gate "$d" REVIEW_GATE_CLI="$TMPROOT/cli-k" FAKE_CALLS="$TMPROOT/callsk2")"
+is "K3 rote Projektregeln blockieren" "1" "$rc"
+
+# ── N · Fehlender Selbsttest der Projektregeln ist FAIL, nicht PASS ────────
+d="$(make_repo projektregeln_selbsttest_fehlt)"
+rm -f "$d/scripts/check-projektregeln.test.sh"
+printf 'Text\n' >> "$d/README.md"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && GATE_DRY_RUN=1 REVIEW_GATE_NO_CACHE=1 GATE_SELFTEST_ACTIVE=1 bash ./scripts/review-gate.sh 2>&1)"; rc=$?
+is "N1 fehlender Projektregeln-Selbsttest blockiert" "1" "$rc"
+case "$out" in *"Selbsttest zu scripts/check-projektregeln.sh fehlt"*) r=0 ;; *) r=1 ;; esac
+is "N1b und benennt den Grund" "0" "$r"
+
+# ── M · Markdown-Stil meldet Verstoesse ────────────────────────────────────
+# Bisher pruefte kein Fall den *roten* Zweig: Die Nachbildung des Linters gab
+# immer 0 zurück. Ein Pruefer, dessen Fehlerzweig nie durchlaufen wird, kann
+# unbemerkt aufhoeren zu blockieren.
+d="$(make_repo markdownlint_rot)"
+printf '#!/bin/sh\necho "x.md:1 MD013/line-length"\nexit 1\n' > "$d/node_modules/.bin/markdownlint-cli2"
+chmod +x "$d/node_modules/.bin/markdownlint-cli2"
+printf 'Text\n' >> "$d/README.md"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "M1 roter Markdown-Stil blockiert" "1" "$rc"
+case "$out" in *"Markdown-Stil"*) r=0 ;; *) r=1 ;; esac
+is "M1b und benennt die Prüfung" "0" "$r"
+
+# ── L · Lizenz-Positivliste der Abhaengigkeitskette (SM-OSS-009) ───────────
+d="$(make_repo lizenz_fremd)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "license": "SSPL-1.0" } } }
+PL
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "L1 Lizenz außerhalb der Positivliste blockiert" "1" "$rc"
+case "$out" in *"Positivliste"*) r=0 ;; *) r=1 ;; esac
+is "L1b und benennt die Lizenz" "0" "$r"
+
+d="$(make_repo lizenz_ohne_angabe)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "resolved": "https://example.invalid/x" } } }
+PL
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "L2 Paket ohne Lizenzangabe blockiert" "1" "$rc"
+
+# Der Positivfall trägt Lizenz **und** Herkunft. Zuvor fehlten Bezugsquelle
+# und Prüfsumme — die Attrappe belegte damit einen Zustand, den die Prüfung
+# seit dem Herkunftsbefund zu Recht beanstandet.
+d="$(make_repo lizenz_ok)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "license": "MIT",
+  "resolved": "https://registry.npmjs.org/x/-/x-1.0.0.tgz", "integrity": "sha512-aaa" } } }
+PL
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "L3 permissive Lizenz besteht" "0" "$rc"
+
+# K4 · Das Zugeständnis "Rückgabewert 3 = ENTFÄLLT" gilt nur den hauseigenen
+# Prüfern. Fremdwerkzeuge (cargo, clippy, ruff, mypy) vergeben ihre
+# Rückgabewerte nach eigener Ordnung; ein dortiges 3 als ENTFÄLLT zu lesen
+# machte aus einem Fehlschlag ein stilles Übergehen. Geprüft wird die
+# Verdrahtung, weil sich `cargo` im Prüfrepo nicht sinnvoll nachbilden lässt.
+r=0
+while IFS= read -r zeile; do
+  case "$zeile" in
+    *"run_gate "*"cargo"*)
+      case "$zeile" in *--rc3-entfaellt*) r=1 ;; esac ;;
+  esac
+done < "$GATE"
+is "K4 Fremdwerkzeuge bekommen kein ENTFÄLLT bei Rückgabewert 3" "0" "$r"
+
+# K5 bezieht sich auf check-projektregeln.sh: Das ist der hauseigene Prüfer,
+# der tatsächlich einen Rückgabewert 3 kennt (kein Quellbaum → ENTFÄLLT).
+# check-docs.sh trägt das Flag bewusst **nicht** — sein Gegenstand liegt immer
+# im Baum, es gibt dort kein ENTFÄLLT (CLAUDE.md Abschnitt 13).
+r=1
+while IFS= read -r zeile; do
+  case "$zeile" in
+    *"run_gate --rc3-entfaellt"*"check-projektregeln.sh"*) r=0 ;;
+  esac
+done < "$GATE"
+is "K5 hauseigene Prüfer bekommen es" "0" "$r"
+
+r=0
+while IFS= read -r zeile; do
+  case "$zeile" in
+    *"run_gate --rc3-entfaellt"*"check-docs.sh"*) r=1 ;;
+  esac
+done < "$GATE"
+is "K5b Dokumentprüfungen tragen kein ENTFÄLLT-Flag" "0" "$r"
+
+# ── O · Kistenauswahl: Fremddaten werden nie zu Programmtext ───────────────
+#
+# Der Kistenname wird aus einem Pfad geschnitten. Stand er in einer
+# Befehlszeichenkette, brachte eine zugelieferte Datei ihren eigenen Namen zur
+# Ausführung — in Stufe 0c, also **vor** jedem Reviewer.
+liste="$TMPROOT/auswahl.txt"
+marke="$TMPROOT/marke"
+
+printf '%s\n' "crates/a;touch $marke/lib.rs" > "$liste"
+aus="$(SELFTEST_FILES="$liste" bash "$GATE" __unit cargo_pakete_beruehrt 2>&1)"
+is "O1 Sonderzeichen im Pfad fallen auf die volle Suite zurück" "--ALLES--" "$aus"
+[ -e "$marke" ] && r=1 || r=0
+is "O1b der eingeschleuste Befehl lief nicht" "0" "$r"
+
+printf '%s\n' "crates/ui/src/x.rs" > "$liste"
+aus="$(SELFTEST_FILES="$liste" bash "$GATE" __unit cargo_pakete_beruehrt 2>&1)"
+is "O2 berührte Kiste wird erkannt" "ui" "$aus"
+
+printf '%s\n' "Cargo.lock" > "$liste"
+aus="$(SELFTEST_FILES="$liste" bash "$GATE" __unit cargo_pakete_beruehrt 2>&1)"
+is "O3 Wurzelkonfiguration zieht die volle Suite" "--ALLES--" "$aus"
+
+# Kommentarzeilen bleiben außen vor — der Skriptkopf beschreibt den behobenen
+# Fehler und darf ihn nennen, ohne den Prüffall auszulösen.
+r=0
+while IFS= read -r zeile; do
+  case "${zeile#"${zeile%%[![:space:]]*}"}" in
+    '#'*) continue ;;
+  esac
+  case "$zeile" in
+    *'cargo test $'*|*'cargo test "$test_flags"'*) r=1 ;;
+  esac
+done < "$GATE"
+is "O4 kein Zeichenkettenbau mehr um cargo test" "0" "$r"
+
+# ── P · Die Bedingungen von check-docs.sh haben eigene Prüffälle ──────────
+#
+# Sechs Bedingungen kamen ohne einen einzigen Fall in den Baum: Einzigkeit der
+# Gestaltungsquelle, drei- und achtstelliges Hex, die Zeilenmarkierung, `*.sh`
+# im Prüfbereich und der Versionsabgleich. Eine ungeprüfte Bedingung kann still
+# aufhören zu blockieren, ohne dass eine Stufe rot wird.
+RT="#"
+
+d="$(make_repo dok_zwei_quellen)"
+mkdir -p "$d/crates/ui/qml"
+printf '// GESTALTUNGSQUELLE\nItem {}\n' > "$d/crates/ui/qml/Gestaltung.qml"
+printf '// GESTALTUNGSQUELLE\nItem {}\n' > "$d/crates/ui/qml/Zweite.qml"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "P1 zwei Gestaltungsquellen blockieren" "1" "$rc"
+case "$out" in *"genau eine"*) r=0 ;; *) r=1 ;; esac
+is "P1b und die Meldung nennt die Regel" "0" "$r"
+
+d="$(make_repo dok_hex_kurz)"
+mkdir -p "$d/crates/ui/qml"
+printf 'Item { color: "%sfff" }\n' "$RT" > "$d/crates/ui/qml/Kachel.qml"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "P2 dreistelliges Hex blockiert" "1" "$rc"
+
+d="$(make_repo dok_hex_lang)"
+mkdir -p "$d/crates/ui/qml"
+printf 'Item { color: "%sc8102e80" }\n' "$RT" > "$d/crates/ui/qml/Kachel.qml"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "P3 achtstelliges Hex blockiert" "1" "$rc"
+
+d="$(make_repo dok_hex_begruendet)"
+mkdir -p "$d/crates/ui/qml"
+printf 'Item { color: "%sc8102e" }  // D-05-Ausnahme: Garnfarbe.\n' "$RT" \
+  > "$d/crates/ui/qml/Kachel.qml"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "P4 begründete Ausnahme in derselben Zeile besteht" "0" "$rc"
+
+d="$(make_repo dok_hex_schaltdatei)"
+printf '#!/bin/sh\necho "%sc8102e"\n' "$RT" > "$d/scripts/farbe.sh"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "P5 Farbliteral in einer Schaltdatei blockiert" "1" "$rc"
+
+# Versionsabgleich: verfälschte Angabe im Kopf eines Fachdokuments.
+d="$(make_repo dok_version)"
+mkdir -p "$d/Requirements" "$d/Design"
+printf '# Lastenheft\n\n| **Version** | 1.3 |\n' > "$d/Requirements/StitchManager_Lastenheft.md"
+printf '# Design\n\n**Version:** 2.0\n**Mitgeltend:** URS-STM-001 v9.9\n' \
+  > "$d/Design/StitchManager_Design_Beschreibung.md"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "P6 verfälschte Versionsangabe blockiert" "1" "$rc"
+case "$out" in *"v9.9"*) r=0 ;; *) r=1 ;; esac
+is "P6b und nennt die falsche Fassung" "0" "$r"
+
+# Herkunft der Abhaengigkeitskette (SM-OSS-011).
+d="$(make_repo dok_herkunft)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "license": "MIT",
+  "resolved": "https://paket.angreifer.example/x.tgz", "integrity": "sha512-aaa" } } }
+PL
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "P7 fremde Bezugsquelle blockiert" "1" "$rc"
+
+d="$(make_repo dok_ohne_pruefsumme)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "license": "MIT",
+  "resolved": "https://registry.npmjs.org/x/-/x-1.0.0.tgz" } } }
+PL
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "P8 fehlende Prüfsumme blockiert" "1" "$rc"
+
+# Zusammengesetzter SPDX-Ausdruck: eine zulaessige Alternative genuegt.
+d="$(make_repo dok_spdx_or)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "license": "(MIT OR CC0-1.0)",
+  "resolved": "https://registry.npmjs.org/x/-/x-1.0.0.tgz", "integrity": "sha512-aaa" } } }
+PL
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "P9 SPDX-OR mit zulässiger Alternative besteht" "0" "$rc"
+
+d="$(make_repo dok_spdx_and)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "license": "MIT AND SSPL-1.0",
+  "resolved": "https://registry.npmjs.org/x/-/x-1.0.0.tgz", "integrity": "sha512-aaa" } } }
+PL
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "P10 SPDX-AND mit unzulässigem Teil blockiert" "1" "$rc"
+
+# Versionierter Fremdcode unter node_modules/ — nicht nur die Startdatei.
+d="$(make_repo dok_node_modules)"
+mkdir -p "$d/node_modules/markdownlint-cli2"
+printf 'console.log(1)\n' > "$d/node_modules/markdownlint-cli2/bin.mjs"
+git -C "$d" add -f node_modules/markdownlint-cli2/bin.mjs >/dev/null 2>&1
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "P11 versionierter Fremdcode unter node_modules blockiert" "1" "$rc"
+case "$out" in *"git rm -r --cached"*) r=0 ;; *) r=1 ;; esac
+is "P11b und nennt den Weg aus der Sperre" "0" "$r"
+
+# ── Q · Rückwärtshülle der Testauswahl (commit-Tier) ──────────────────────
+#
+# Die Hülle entscheidet, welche Prüffälle im commit-Tier **nicht** laufen. Ein
+# Fehler darin wirkt fail-open: zu kleine Auswahl, grünes Gate, ungefahrene
+# Tests — und das Protokoll schreibt „änderungsbezogen" als Nachweis.
+cat > "$TMPROOT/metadata-ok" <<'MD'
+#!/bin/sh
+cat <<'JSON'
+{ "packages": [
+  { "name": "kern-typen",   "dependencies": [] },
+  { "name": "kern-db",      "dependencies": [{ "name": "kern-typen" }] },
+  { "name": "kern-fassade", "dependencies": [{ "name": "kern-db" }] },
+  { "name": "ui",           "dependencies": [{ "name": "kern-fassade" }] }
+] }
+JSON
+MD
+chmod +x "$TMPROOT/metadata-ok"
+
+printf '%s\n' "crates/kern-typen/src/lib.rs" > "$liste"
+aus="$(SELFTEST_FILES="$liste" CARGO_METADATA_CMD="$TMPROOT/metadata-ok" \
+       bash "$GATE" __unit cargo_pakete_mit_abhaengigen 2>&1 | tr '\n' ' ')"
+is "Q1 abhängige Kisten kommen in die Auswahl" \
+   "kern-db kern-fassade kern-typen ui " "$aus"
+
+printf '%s\n' "crates/ui/src/x.rs" > "$liste"
+aus="$(SELFTEST_FILES="$liste" CARGO_METADATA_CMD="$TMPROOT/metadata-ok" \
+       bash "$GATE" __unit cargo_pakete_mit_abhaengigen 2>&1 | tr '\n' ' ')"
+is "Q2 ein Blatt zieht nur sich selbst" "ui " "$aus"
+
+# Verzeichnisname ungleich Paketname → nicht raten, sondern alles fahren.
+printf '%s\n' "crates/gibtsnicht/src/x.rs" > "$liste"
+aus="$(SELFTEST_FILES="$liste" CARGO_METADATA_CMD="$TMPROOT/metadata-ok" \
+       bash "$GATE" __unit cargo_pakete_mit_abhaengigen 2>&1)"
+is "Q3 unbekannter Kistenname fällt auf die volle Suite zurück" "--ALLES--" "$aus"
+
+# Werkzeug nicht auflösbar → ebenfalls volle Suite, nie eine leere Auswahl.
+printf '%s\n' "crates/kern-typen/src/lib.rs" > "$liste"
+aus="$(SELFTEST_FILES="$liste" CARGO_METADATA_CMD="$TMPROOT/gibtsnicht" \
+       bash "$GATE" __unit cargo_pakete_mit_abhaengigen 2>&1)"
+is "Q4 unbrauchbare Metadaten fallen auf die volle Suite zurück" "--ALLES--" "$aus"
+
+# ── R · Lizenzprüfung: Abbruch ist kein Bestehen ──────────────────────────
+d="$(make_repo lizenz_kaputt)"
+printf '{ das ist kein json\n' > "$d/package-lock.json"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "R1 unlesbares Lockfile blockiert" "1" "$rc"
+case "$out" in *"abgebrochen"*) r=0 ;; *) r=1 ;; esac
+is "R1b und meldet den Abbruch, nicht 'geprueft'" "0" "$r"
+
+d="$(make_repo lizenz_liste_leer)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "license": "MIT",
+  "resolved": "https://registry.npmjs.org/x/-/x-1.0.0.tgz", "integrity": "sha512-aaa" } } }
+PL
+printf '# nur Kommentar\n' > "$d/.lizenzen.conf"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "R2 leere Positivliste blockiert" "1" "$rc"
+
+d="$(make_repo lizenz_ohne_resolved)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "license": "MIT" } } }
+PL
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "R3 Eintrag ohne Bezugsquelle blockiert" "1" "$rc"
+case "$out" in *"ohne Bezugsquelle"*) r=0 ;; *) r=1 ;; esac
+is "R3b und benennt das fehlende Feld" "0" "$r"
+
+d="$(make_repo lizenz_spdx_with)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "license": "Apache-2.0 WITH LLVM-exception",
+  "resolved": "https://registry.npmjs.org/x/-/x-1.0.0.tgz", "integrity": "sha512-aaa" } } }
+PL
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "R4 SPDX-WITH bindet an die Lizenz davor" "0" "$rc"
+
+d="$(make_repo lizenz_ohne_lock)"
+printf '{ "name": "x", "dependencies": { "y": "^1" } }\n' > "$d/package.json"
+rm -f "$d/package-lock.json"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "R5 package.json ohne Sperrdatei blockiert" "1" "$rc"
+
+# ── S · Prüfbereich deckt die Oberflächensprachen beider Wege ─────────────
+d="$(make_repo bereich_py)"
+mkdir -p "$d/scripts/lib"
+printf 'FARBE = "%sc8102e"\n' "$RT" > "$d/scripts/lib/probe.py"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "S1 Farbliteral in einer .py-Datei blockiert" "1" "$rc"
+
+d="$(make_repo bereich_qss)"
+printf '.k { color: %sc8102e; }\n' "$RT" > "$d/stil.qss"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "S2 Farbliteral in einer .qss-Datei blockiert" "1" "$rc"
+
+# ── T · Zugangsdaten-Ablagen, die legitim im Baum liegen ──────────────────
+#
+# `.npmrc` **muss** im Baum liegen (`ignore-scripts=true`, SM-OSS-011) und ist
+# zugleich ein klassischer Ablageort für Registry-Token. Sie in die Sperrliste
+# zu setzen hieße, die eigene Vorgabe zu verbieten — eine Regel ohne begehbaren
+# Weg (S1). Sie wird deshalb immer inhaltlich gelesen.
+TOK2="_auth""Token"
+liste2="$TMPROOT/immer.txt"
+printf '.npmrc\n' > "$liste2"
+
+# Eigene Repositorien: `ROOT` leitet das Gate aus `git rev-parse` ab, eine
+# Umgebungsvariable greift dort nicht.
+npmrc_sicher="$(make_repo npmrc_sicher)"
+printf 'ignore-scripts=true\n' > "$npmrc_sicher/.npmrc"
+git -C "$npmrc_sicher" add -A >/dev/null 2>&1
+aus="$(cd "$npmrc_sicher" && bash ./scripts/review-gate.sh __unit scan_secrets_immer "$liste2" 2>&1)"; rc=$?
+is "T1 saubere .npmrc blockiert nicht" "0" "$rc"
+
+npmrc_token="$(make_repo npmrc_token)"
+printf 'ignore-scripts=true\n//paket.example/:%s=geheim123\n' "$TOK2" > "$npmrc_token/.npmrc"
+git -C "$npmrc_token" add -A >/dev/null 2>&1
+aus="$(cd "$npmrc_token" && bash ./scripts/review-gate.sh __unit scan_secrets_immer "$liste2" 2>&1)"; rc=$?
+is "T2 Zugangstoken in .npmrc blockiert" "1" "$rc"
+case "$aus" in *"geheim123"*) r=1 ;; *) r=0 ;; esac
+is "T2b und der Wert steht nicht im Protokoll" "0" "$r"
+case "$aus" in *".npmrc:2"*) r=0 ;; *) r=1 ;; esac
+is "T2c aber Datei und Zeile schon" "0" "$r"
+
+# `.npmrc` darf **nicht** in der Sperrliste stehen — sonst blockiert ihr
+# blosses Vorhandensein, und die Vorgabe waere unerfuellbar.
+r=0
+while IFS= read -r zeile; do
+  case "$zeile" in
+    SENSITIVE_PATH_RE=*) case "$zeile" in *npmrc*) r=1 ;; esac ;;
+  esac
+done < "$GATE"
+is "T3 .npmrc steht nicht in der Sperrliste" "0" "$r"
+
+# ── U · Der Secret-Scan liest das geprüfte Objekt, nicht den Arbeitsbaum ──
+#
+# Committet wird im commit-Tier der **Index**. Wer den Arbeitsbaum liest,
+# prüft etwas anderes als das, was entsteht: `git add` einer Datei mit Token,
+# danach das Token im Arbeitsbaum entfernen — und das Gate meldete grün,
+# während der Index es trägt.
+d="$(make_repo secret_index)"
+printf 'ignore-scripts=true\n//paket.example/:%s=geheim456\n' "$TOK2" > "$d/.npmrc"
+git -C "$d" add -A >/dev/null 2>&1
+printf 'ignore-scripts=true\n' > "$d/.npmrc"      # Arbeitsbaum bereinigt
+aus="$(cd "$d" && bash ./scripts/review-gate.sh __unit scan_secrets_immer "$liste2" 2>&1)"; rc=$?
+is "U1 Token im Index wird trotz sauberem Arbeitsbaum gefunden" "1" "$rc"
+case "$aus" in *"geheim456"*) r=1 ;; *) r=0 ;; esac
+is "U1b und der Wert steht nicht im Protokoll" "0" "$r"
+
+# `.netrc` ist leerzeichengetrennt — ein Muster, das nur `=` kennt, liest sie
+# nicht, und die Datei stünde gelistet und trotzdem ungeprüft da.
+d="$(make_repo secret_netrc)"
+printf 'machine api.example.invalid login ich password %s\n' "geheim789" > "$d/.netrc"
+git -C "$d" add -A >/dev/null 2>&1
+printf '.netrc\n' > "$TMPROOT/netrc.txt"
+aus="$(cd "$d" && bash ./scripts/review-gate.sh __unit scan_secrets_immer "$TMPROOT/netrc.txt" 2>&1)"; rc=$?
+is "U2 leerzeichengetrennte .netrc wird gelesen" "1" "$rc"
+
+# ── V · Lockfile-Fassung und leere Kette ──────────────────────────────────
+d="$(make_repo lock_v1)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 1, "dependencies": { "x": { "version": "1.0.0",
+  "resolved": "https://paket.angreifer.example/x.tgz" } } }
+PL
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "V1 Lockfile-Fassung 1 blockiert" "1" "$rc"
+
+d="$(make_repo lock_leer)"
+printf '{}\n' > "$d/package-lock.json"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "V2 leeres Lockfile blockiert" "1" "$rc"
+
+d="$(make_repo lock_herkunft_ausnahme)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "license": "MIT",
+  "resolved": "https://spiegel.example/x.tgz", "integrity": "sha512-aaa" } } }
+PL
+printf 'MIT\nherkunft node_modules/x  # Firmenspiegelung, geprueft am 26.08.2026.\n' \
+  > "$d/.lizenzen.conf"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "V3 begruendete Herkunfts-Ausnahme traegt" "0" "$rc"
+
+d="$(make_repo lock_herkunft_ohne_grund)"
+cat > "$d/package-lock.json" <<'PL'
+{ "lockfileVersion": 3, "packages": { "": {}, "node_modules/x": { "license": "MIT",
+  "resolved": "https://spiegel.example/x.tgz", "integrity": "sha512-aaa" } } }
+PL
+printf 'MIT\nherkunft node_modules/x\n' > "$d/.lizenzen.conf"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "V4 Herkunfts-Ausnahme ohne Grund blockiert" "1" "$rc"
+
+# ── W · Signaturbildung und Fuzzing-Zielliste ─────────────────────────────
+#
+# Die Signatur entscheidet, ob ein PASS aus dem Cache kommt — Wirkrichtung
+# fail-open. Sie hatte bislang keinen Prüffall.
+d="$(make_repo signatur)"
+printf 'A\n' > "$d/inhalt.txt"; git -C "$d" add -A >/dev/null 2>&1
+sig1="$(cd "$d" && SELFTEST_FILES=<(printf 'inhalt.txt\n') bash ./scripts/review-gate.sh __unit dateihashes_bereitstellen 2>&1; true)"
+printf 'B\n' > "$d/inhalt.txt"; git -C "$d" add -A >/dev/null 2>&1
+r=0
+h1="$(cd "$d" && git hash-object inhalt.txt)"
+printf 'A\n' > "$d/inhalt.txt"
+h2="$(cd "$d" && git hash-object inhalt.txt)"
+[ "$h1" = "$h2" ] && r=1
+is "W1 geaenderter Inhalt ergibt einen anderen Hash" "0" "$r"
+
+# Leere Zielliste ist kein bestandener Fuzzing-Lauf (SM-SEC-011).
+r=1
+while IFS= read -r zeile; do
+  case "$zeile" in *"kein Ziel gefunden"*) r=0 ;; esac
+done < "$GATE"
+is "W2 leere Fuzzing-Zielliste blockiert" "0" "$r"
+
+# ── X · In Markdown ist `#` kein Farbwert ─────────────────────────────────
+#
+# Das Dreierraster trifft dort sonst jede Vorgangsnummer und jede Sprungmarke.
+# Die einzige vorgesehene Befreiung wäre `D-05-Ausnahme: <Grund>` mitten im
+# Fließtext — im gerenderten Dokument sichtbar. Eine gestellte Falle für den
+# nächsten Autor.
+d="$(make_repo md_raute)"
+printf 'Siehe Vorgang %s123 und [Abschnitt](%sabc-drei).\n' "$RT" "$RT" > "$d/Hinweis.md"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "X1 Vorgangsnummer und Sprungmarke sind keine Farbliterale" "0" "$rc"
+
+d="$(make_repo qml_raute)"
+mkdir -p "$d/crates/ui/qml"
+printf 'Item { color: "%sabc" }\n' "$RT" > "$d/crates/ui/qml/Kachel.qml"
+git -C "$d" add -A >/dev/null 2>&1
+out="$(cd "$d" && bash ./scripts/check-docs.sh 2>&1)"; rc=$?
+is "X2 dasselbe in einer .qml ist eines" "1" "$rc"
 
 # ── Ergebnis ───────────────────────────────────────────────────────────────
 printf '\nSelbsttest: %d bestanden, %d fehlgeschlagen\n' "$PASS" "$FAIL"

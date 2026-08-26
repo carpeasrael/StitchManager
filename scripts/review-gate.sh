@@ -65,7 +65,17 @@ count_of(){ [ -f "$1" ] && wc -l < "$1" | tr -d ' ' || echo 0; }
 gate_signature() {
   local files=("$SELF")
   local f
-  for f in "$ROOT/scripts/check-docs.sh" "$ROOT/.claude/agents/"*.md; do
+  # Prüflogik ist nicht nur Skript: Die Linter-Konfiguration wählt die Regeln aus, die
+  # Paketdateien binden die Werkzeugfassung. Beides ändert das Prüfergebnis und muss deshalb
+  # den Cache-Schlüssel ändern (CLAUDE.md, "Gate-Cache").
+  for f in "$ROOT/scripts/check-docs.sh" "$ROOT/scripts/check-plan.sh" \
+           "$ROOT/scripts/lib/gestaltung.sh" "$ROOT/scripts/lib/lizenzen.py" \
+           "$ROOT/.lizenzen.conf" \
+           "$ROOT/scripts/check-projektregeln.sh" \
+           "$ROOT/scripts/check-projektregeln.test.sh" "$ROOT/.projektregeln.conf" \
+           "$ROOT/.npmrc" \
+           "$ROOT/scripts/check-plan.test.sh" "$ROOT/.markdownlint-cli2.jsonc" \
+           "$ROOT/package.json" "$ROOT/package-lock.json" "$ROOT/.claude/agents/"*.md; do
     [ -f "$f" ] && files+=("$f")
   done
   cat "${files[@]}" 2>/dev/null | git hash-object --stdin
@@ -171,7 +181,20 @@ collect_scope() {
 }
 
 # ── Stufe 0.1 — Secret-Scan ──────────────────────────────────────────────────
+# **Zwei verschiedene Listen, nicht eine.**
+#
+# `SENSITIVE_PATH_RE` ist eine **Sperrliste**: Solche Dateien gehören gar nicht
+# in den Baum, ihr bloßes Vorhandensein blockiert.
+#
+# `SENSITIVE_CONTENT_RE` nennt Dateien, die im Baum **richtig** sind, deren
+# Inhalt aber ein Geheimnis tragen könnte. `.npmrc` ist der Fall: Sie muss
+# vorhanden sein (`ignore-scripts=true`, SM-OSS-011), ist aber zugleich ein
+# klassischer Ablageort für Registry-Token (`//host/:_authToken=…`). Sie in die
+# Sperrliste zu setzen hieße, die eigene Vorgabe zu verbieten — eine Regel ohne
+# begehbaren Weg (S1). Sie wird deshalb immer inhaltlich gescannt, auch wenn
+# der Diff sie nur beiläufig berührt (SM-SEC-006, CLAUDE.md Abschnitt 12).
 SENSITIVE_PATH_RE='(^|/)\.secure/|(^|/)\.env($|\.)|\.pem$|\.key$|(^|/)id_rsa|(^|/)id_ed25519|\.p12$|\.pfx$'
+SENSITIVE_CONTENT_RE='(^|/)\.npmrc$|(^|/)\.netrc$|(^|/)\.pypirc$'
 SENSITIVE_PATH_ALLOW_RE='\.(example|sample|template)$|\.env\.(example|sample|docker\.example)$'
 
 scan_secrets_paths() {   # $1 = Dateiliste
@@ -215,10 +238,63 @@ scan_secrets_content() {   # $1 = Diff
   ' "$1"
 }
 
+# Zugangsdaten-Ablagen, die legitim im Baum liegen, werden vollständig
+# gelesen — nicht nur ihre hinzugefügten Zeilen. Ein Token, das schon vor
+# diesem Änderungssatz darin stand, taucht in keinem Diff mehr auf. Gelesen
+# wird, sobald der Änderungssatz die Datei berührt.
+#
+# **Aus dem geprüften Objekt, nicht aus dem Arbeitsbaum.** Committet wird im
+# commit-Tier der **Index**, im push-Tier der Commit-Bereich. Wer den
+# Arbeitsbaum liest, prüft etwas anderes als das, was entsteht: `git add`
+# einer Datei mit Token, danach das Token im Arbeitsbaum entfernen — und das
+# Gate meldete grün, während der Index es trägt. Dieselbe Fehlerklasse ist in
+# diesem Repository schon einmal behoben worden (Größe über `git cat-file -s`).
+scan_secrets_immer() {   # $1 = Dateiliste
+  local f hits=0 treffer inhalt quelle
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    printf '%s' "$f" | grep -Eq "$SENSITIVE_CONTENT_RE" || continue
+    if [ "${REVIEW_GATE_TIER:-commit}" = "push" ]; then
+      quelle="HEAD:$f"
+    else
+      quelle=":$f"
+    fi
+    inhalt="$(git -C "$ROOT" show "$quelle" 2>/dev/null)"
+    if [ -z "$inhalt" ]; then
+      # Gelöscht oder nicht lesbar. Eine gelöschte Datei trägt kein Geheimnis
+      # mehr; ist sie dagegen vorhanden und nur nicht lesbar, ist das kein
+      # Bestehen (S3).
+      if git -C "$ROOT" cat-file -e "$quelle" 2>/dev/null; then
+        continue        # vorhanden und leer
+      fi
+      if [ -n "$(git -C "$ROOT" ls-files -- "$f" 2>/dev/null)" ]; then
+        echo "Inhalt von $f nicht lesbar — nicht geprüft heißt nicht bestanden"
+        hits=1
+      fi
+      continue
+    fi
+    # Die netrc-Syntax ist **leerzeichengetrennt** (`machine … password …`).
+    # Ein Muster, das nur `=` kennt, kann sie nicht lesen — die Datei stünde
+    # in der Liste und wäre trotzdem ungeprüft.
+    treffer="$(printf '%s\n' "$inhalt" \
+      | grep -nEi '(_auth[Tt]oken|_password|_auth)[[:space:]]*=|npm_[A-Za-z0-9]{30,}|(^|[^A-Za-z])(password|passwd)[[:space:]]*[=:[:space:]][[:space:]]*[^[:space:]]' \
+      | cut -d: -f1 || true)"
+    if [ -n "$treffer" ]; then
+      # Nie der Wert, nur Datei und Zeile.
+      while IFS= read -r nr; do
+        [ -n "$nr" ] && echo "Zugangsdatum in $f:$nr (Wert wird nicht protokolliert)"
+      done <<< "$treffer"
+      hits=1
+    fi
+  done < "$1"
+  return $hits
+}
+
 stage0_secrets() {
   local out="$WORK/s0-secrets" rc=0
   : > "$out"
   scan_secrets_paths "$FILES_ACMR" >> "$out" || rc=1
+  scan_secrets_immer "$FILES_ACMR" >> "$out" || rc=1
 
   if have gitleaks && [ "$REVIEW_GATE_TIER" = "commit" ]; then
     local gl="$WORK/gitleaks.out" grc=0
@@ -341,6 +417,55 @@ stage0_binary() {
   return 0
 }
 
+# Selbsttest der Projektregelprüfung — eigenständig.
+#
+# Bewusst **nicht** im Erfolgszweig des Gate-Selbsttests: Dort säße er hinter
+# dessen vorzeitigem `return`, und fehlte `review-gate.test.sh`, fiele er
+# stillschweigend mit aus. Gebunden wird an das Vorhandensein des **Prüfers**;
+# liegt der im Baum, ist ein fehlender Selbsttest FAIL (S3).
+# Selbsttest eines hauseigenen Prüfers als eigene 0b-Stufe.
+#
+# **Eine Funktion für beide.** Zuvor hing `check-projektregeln.test.sh` als
+# eigene Stufe im Gate, `check-plan.test.sh` dagegen als Fall *innerhalb* des
+# Gate-Selbsttests — zwei Verdrahtungen für zwei Schwesterskripte, und die
+# S3-Regel („Prüfer im Baum, Selbsttest fehlt → FAIL") galt nur der einen
+# Hälfte.
+stage0b_selbsttest() {   # $1 = Beschriftung, $2 = Prüfer, $3 = Selbsttest
+  local name="0b Selbsttest $1"
+  local pruefer="$ROOT/$2" test="$ROOT/$3"
+  if [ ! -f "$pruefer" ]; then
+    record "$name" "ENTFÄLLT" "kein Prüfer ($2) im Baum"
+    return 0
+  fi
+  if [ ! -f "$test" ]; then
+    record "$name" "FAIL" "$2 liegt im Baum, sein Selbsttest ($3) fehlt (S3)"
+    block "Stufe 0b: Der Selbsttest zu $2 fehlt."
+    return 1
+  fi
+  if [ "${GATE_SELFTEST_ACTIVE:-0}" = "1" ]; then
+    record "$name" "ENTFÄLLT" "läuft bereits innerhalb des Selbsttests"
+    return 0
+  fi
+  local out="$WORK/s0b-$(printf '%s' "$1" | tr -c 'A-Za-z0-9' '_').out"
+  if GATE_SELFTEST_ACTIVE=1 bash "$test" > "$out" 2>&1; then
+    record "$name" "PASS" "$(tail -2 "$out")"
+    return 0
+  fi
+  record "$name" "FAIL" "$(tail -30 "$out")"
+  block "Stufe 0b: Der Selbsttest zu $2 ist rot."
+  return 1
+}
+
+stage0b_projektregeln() {
+  stage0b_selbsttest "Projektregeln" \
+    "scripts/check-projektregeln.sh" "scripts/check-projektregeln.test.sh"
+}
+
+stage0b_plan() {
+  stage0b_selbsttest "Planprüfungen" \
+    "scripts/check-plan.sh" "scripts/check-plan.test.sh"
+}
+
 # ── Stufe 0b — Gate-Selbsttest ───────────────────────────────────────────────
 stage0b_selftest() {
   local cmd="$GATE_SELFTEST_CMD"
@@ -378,41 +503,266 @@ classify_scope() {
   if [ "$SCOPE_UNKNOWN" = 1 ]; then SCOPE_DOCS=1; SCOPE_CODE=1; fi
 }
 
-run_gate() {   # $1 = Name, $2 = Bedingung (0/1), $3… = Befehl
+# Hashes aller Dateien des Änderungssatzes — ein Prozess statt einer je Datei.
+dateihashes_bereitstellen() {
+  [ -f "$WORK/dateihashes" ] && return 0
+  : > "$WORK/dateihashes"
+  : > "$WORK/dateihashes.vorhanden"
+  # **Pfade relativ zur Wurzel.** Ein absoluter Pfad in der Signatur macht den
+  # Cache-Schlüssel vom Ablageort des Klons abhängig: Derselbe Inhalt an einer
+  # anderen Stelle bekäme einen anderen Schlüssel, und ein gültiges PASS würde
+  # nie wiederverwendet.
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    if [ -f "$ROOT/$f" ]; then
+      printf '%s\n' "$f" >> "$WORK/dateihashes.vorhanden"
+    else
+      printf '%s entfernt\n' "$f" >> "$WORK/dateihashes"
+    fi
+  done < "$FILES_FILE"
+  if [ -s "$WORK/dateihashes.vorhanden" ]; then
+    # `--stdin-paths` hasht alle Pfade in **einem** Prozess. Es kennt kein
+    # `-z`: Ein Dateiname mit Zeilenumbruch verschöbe die Paarung von Pfad und
+    # Hash um eine Zeile, und die Signatur wäre still falsch — ein PASS aus dem
+    # Cache für einen anderen Inhalt. Deshalb wird die Paarung geprüft, statt
+    # ihr zu vertrauen.
+    ( cd "$ROOT" && git hash-object --stdin-paths < "$WORK/dateihashes.vorhanden" ) \
+      > "$WORK/dateihashes.roh" 2>/dev/null || true
+    local n_pfade n_hashes
+    n_pfade="$(wc -l < "$WORK/dateihashes.vorhanden" | tr -d ' ')"
+    n_hashes="$(wc -l < "$WORK/dateihashes.roh" | tr -d ' ')"
+    if [ "$n_pfade" != "$n_hashes" ]; then
+      # Fail-closed: eine Signatur, die nicht stimmen kann, darf keinen
+      # Cache-Treffer erzeugen. Der Zufallsanteil macht sie eindeutig.
+      printf 'signatur-nicht-bildbar %s\n' "$(date +%s)-$$" >> "$WORK/dateihashes"
+    else
+      paste -d' ' "$WORK/dateihashes.vorhanden" "$WORK/dateihashes.roh" \
+        >> "$WORK/dateihashes"
+    fi
+  fi
+}
+
+run_gate() {   # [--rc3-entfaellt] $1 = Name, $2 = Bedingung (0/1), $3… = Befehl
+  # `--rc3-entfaellt` erlaubt dem Befehl, mit Rückgabewert 3 „Gegenstand nicht
+  # vorhanden" zu melden. Das ist eine Übereinkunft der **hauseigenen** Skripte
+  # und darf nicht für Fremdwerkzeuge gelten: `cargo`, `clippy`, `ruff` oder
+  # `mypy` vergeben ihre Rückgabewerte nach eigener Ordnung, und ein dortiges 3
+  # als ENTFÄLLT zu lesen machte aus einem Fehlschlag ein stilles Übergehen.
+  local rc3=0
+  if [ "${1:-}" = "--rc3-entfaellt" ]; then rc3=1; shift; fi
   local name="$1" applies="$2"; shift 2
   if [ "$applies" != "1" ]; then record "$name" "ENTFÄLLT" "vom Änderungssatz nicht betroffen"; return 0; fi
   local key sig out="$WORK/gate-$(printf '%s' "$name" | tr -c 'A-Za-z0-9' '_')"
   # Inhaltssignatur: Name UND Inhalt jeder betroffenen Datei. Eine Signatur nur über
   # die Dateinamen liefert beim zweiten Lauf ein PASS aus dem Cache, ohne dass der
   # geänderte Inhalt je geprüft wurde.
-  sig="$( { printf '%s' "$GATE_SIG$name"
-            while IFS= read -r f; do
-              [ -n "$f" ] || continue
-              printf '%s ' "$f"
-              if [ -f "$ROOT/$f" ]; then git hash-object "$ROOT/$f"; else echo "entfernt"; fi
-            done < "$FILES_FILE"
-          } | git hash-object --stdin)"
+  #
+  # Die Dateihashes entstehen **einmal je Lauf**, nicht je Gate: Zuvor startete
+  # `git hash-object` je Datei und je Gate einen eigenen Prozess — bei sechs
+  # Gates in Stufe 0c und einem Änderungssatz nahe `DIFF_CAP_BYTES` waren das
+  # über tausend Prozesse allein für den Cache-Schlüssel („billig vor teuer",
+  # CLAUDE.md Abschnitt 13).
+  dateihashes_bereitstellen
+  sig="$( { printf '%s' "$GATE_SIG$name"; cat "$WORK/dateihashes"; } | git hash-object --stdin)"
   key="gate-$sig"
   if cache_valid "$CACHE_DIR/$key"; then
     record "$name" "PASS" "aus dem Cache (Signatur $sig)"; return 0
   fi
-  if "$@" > "$out" 2>&1; then
+  local rc=0
+  "$@" > "$out" 2>&1 || rc=$?
+  if [ "$rc" = 0 ]; then
     record "$name" "PASS" "$(tail -3 "$out")"; cache_put "$key"; return 0
+  fi
+  # Rückgabewert 3 heißt „Gegenstand nicht vorhanden" (dieselbe Übereinkunft
+  # wie in check-plan.sh). Das ist ENTFÄLLT und steht so im Protokoll, nie als
+  # PASS — „ein nicht durchgeführter Test ist kein bestandener Test"
+  # (CLAUDE.md Abschnitt 13, „Anwendbarkeit", S3). Der Cache bleibt außen vor:
+  # Ein ENTFÄLLT darf nicht als Ergebnis wiederverwendet werden.
+  if [ "$rc" = 3 ] && [ "$rc3" = 1 ]; then
+    record "$name" "ENTFÄLLT" "$(tail -3 "$out")"; return 0
   fi
   record "$name" "FAIL" "$(tail -30 "$out")"
   block "Stufe 0c: $name ist rot."
   return 1
 }
 
+# Welche Kisten berührt der Änderungssatz?
+#
+# **Kistennamen kommen aus Pfadnamen und sind damit Fremddaten.** Sie standen
+# zuvor über `bash -c "… cargo test $test_flags"` in einer Befehlszeichenkette:
+# Eine zugelieferte Datei `crates/a;curl …|sh/lib.rs` hätte ihren Namen in
+# Stufe 0c zur Ausführung gebracht — **vor** Stufe 1, also bevor ein Reviewer
+# den Satz je gesehen hat, auf dem Rechner, der nach SM-SEC-006 und SM-KIA-010
+# den Schlüsselspeicher trägt. Deshalb gilt hier dreierlei:
+#
+#   1. Jeder Name wird gegen `[A-Za-z0-9_-]` geprüft — mehr lässt Cargo für
+#      Paketnamen nicht zu.
+#   2. Ein Name, der das verletzt, führt **nie** zu einer Befehlszeile. Er
+#      fällt auf `--all` zurück: mehr prüfen ist der sichere Ausweg, weniger
+#      wäre fail-open.
+#   3. Übergeben wird eine Argumentliste, keine Zeichenkette. Damit gibt es
+#      keine Stelle mehr, an der ein Dateiname zu Programmtext werden kann.
+#
+# Bewusst eine Funktion und keine Kommandosubstitution mit `case` darin: Die
+# schließende Klammer eines `case`-Musters beendet `$( )` vorzeitig.
+cargo_pakete_beruehrt() {
+  local voll=0 pakete="" f k
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    case "$f" in
+      Cargo.toml|Cargo.lock) voll=1 ;;
+      crates/*)
+        k="${f#crates/}"; k="${k%%/*}"
+        # Validierung vor jeder weiteren Verwendung.
+        case "$k" in
+          ''|*[!A-Za-z0-9_-]*) voll=1 ;;
+          *) case " $pakete " in
+               *" $k "*) ;;
+               *) pakete="$pakete $k" ;;
+             esac ;;
+        esac ;;
+    esac
+  done < "$FILES_FILE"
+  [ "$voll" = 1 ] && { printf '%s\n' "--ALLES--"; return 0; }
+  printf '%s\n' $pakete
+}
+
+# Abhängige Kisten mitnehmen.
+#
+# Eine Änderung an `kern-typen` ließ die Prüffälle von `kern-fassade`,
+# `kern-services` und `ui` im commit-Tier ungefahren — die Auswahl war
+# änderungsbezogen, aber nicht wirkungsbezogen. Die Rückwärtshülle kommt aus
+# `cargo metadata`; fehlt das Werkzeug oder scheitert die Auflösung, gilt
+# `--all`. Der Rückfall geht immer in Richtung *mehr* Prüfung.
+cargo_pakete_mit_abhaengigen() {
+  # Ohne Codebezug gibt es nichts aufzulösen — `cargo metadata` liest den
+  # gesamten Verbund und kostet mehr als die Frage wert ist.
+  [ "${SCOPE_CODE:-1}" = "1" ] || { printf '%s\n' "--ALLES--"; return 0; }
+  local roh
+  roh="$(cargo_pakete_beruehrt)"
+  case "$roh" in *--ALLES--*) printf '%s\n' "--ALLES--"; return 0 ;; esac
+  [ -n "$roh" ] || { printf '%s\n' "--ALLES--"; return 0; }
+  command -v python3 >/dev/null 2>&1 || { printf '%s\n' "--ALLES--"; return 0; }
+  # Der Bezugsbefehl ist überschreibbar, damit der Selbsttest die Hüllenbildung
+  # gegen einen festen Bestand prüfen kann. Genau diese Funktion entscheidet,
+  # welche Prüffälle im commit-Tier **nicht** laufen; ein Fehler darin wirkt
+  # fail-open, und ohne Einstieg wäre sie unbelegbar.
+  # Der Bezugsbefehl steht als Argumentliste, nicht als Zeichenkette: Eine
+  # ungequotete Expansion machte aus einer Umgebungsvariablen Programmtext.
+  local -a mdcmd
+  if [ -n "${CARGO_METADATA_CMD:-}" ]; then
+    read -r -a mdcmd <<< "$CARGO_METADATA_CMD"
+  else
+    mdcmd=(cargo metadata --no-deps --format-version 1)
+  fi
+  ( cd "$ROOT" && "${mdcmd[@]}" 2>/dev/null ) \
+    | python3 -c '
+import json,sys
+roh = set(sys.argv[1].split())
+try:
+    m = json.load(sys.stdin)
+except Exception:
+    print("--ALLES--"); sys.exit(0)
+namen = {p["name"] for p in m.get("packages", [])}
+if not roh <= namen:          # Verzeichnisname != Paketname → nicht raten
+    print("--ALLES--"); sys.exit(0)
+# Rückwärtskanten innerhalb des Verbunds
+rueck = {n: set() for n in namen}
+for p in m.get("packages", []):
+    for d in p.get("dependencies", []):
+        if d["name"] in namen:
+            rueck[d["name"]].add(p["name"])
+huelle, rand = set(roh), list(roh)
+while rand:
+    for n in rueck.get(rand.pop(), ()):
+        if n not in huelle:
+            huelle.add(n); rand.append(n)
+print("\n".join(sorted(huelle)))
+' "$roh"
+}
+
+# Führt die Auswahl aus — als Argumentliste, ohne Zeichenkettenbau.
+cargo_test_lauf() { ( cd "$ROOT" && cargo test "$@" ); }
+cargo_fmt_lauf()  { ( cd "$ROOT" && cargo fmt --all -- --check ); }
+cargo_clippy_lauf() { ( cd "$ROOT" && cargo clippy --all-targets --all-features -- -D warnings ); }
+cargo_deny_lauf() { ( cd "$ROOT" && cargo deny check licenses bans sources ); }
+cargo_fuzz_lauf() {
+  # **Eine leere Zielliste ist kein bestandener Lauf.** SM-SEC-011 verlangt je
+  # Formatparser ein dauerhaftes Ziel; ein leeres `fuzz/`-Verzeichnis meldete
+  # zuvor PASS, ohne ein einziges Ziel gefahren zu haben.
+  ( cd "$ROOT" || exit 1
+    # Die Liste in eine Datei, nicht in eine Pipe: Ein `exit 1` in einer
+    # Pipe-Schleife beendet nur deren Subshell, und der Fehlschlag eines
+    # einzelnen Ziels ginge verloren.
+    liste="$(mktemp)"
+    trap 'rm -f "$liste"' EXIT
+    cargo fuzz list > "$liste" 2>/dev/null || true
+    if [ ! -s "$liste" ]; then
+      echo "Fuzzing: kein Ziel gefunden — SM-SEC-011 verlangt je Formatparser eines."
+      exit 1
+    fi
+    while IFS= read -r t; do
+      [ -n "$t" ] || continue
+      cargo fuzz run "$t" -- -max_total_time=30 || exit 1
+    done < "$liste" )
+}
+
 stage0c_checks() {
   local rc=0
   classify_scope
+  # **Kein `--rc3-entfaellt`.** Der Gegenstand der Dokumentprüfungen liegt
+  # immer im Baum (CLAUDE.md Abschnitt 13, Tabelle „Anwendbarkeit":
+  # „Markdown-Stil, Dokumentprüfungen | immer"). Das Skript kennt entsprechend
+  # keinen Rückgabewert 3; das Flag war tote Verdrahtung, die der Selbsttest
+  # als Regel zementierte.
   run_gate "0c Dokumentprüfungen" "$SCOPE_DOCS" bash "$ROOT/scripts/check-docs.sh" || rc=1
+  # Projektregeln am Quellbaum (CLAUDE.md Abschnitt 11): D-05/SM-DES-003 im
+  # Komponentencode, Schichttrennung SM-SEC-004, parametrisierte Abfragen
+  # SM-SEC-005. Das Skript meldet selbst ENTFÄLLT, solange kein Quellbaum
+  # vorhanden ist.
+  run_gate --rc3-entfaellt "0c Projektregeln" "$SCOPE_CODE" bash "$ROOT/scripts/check-projektregeln.sh" || rc=1
   if [ -f "$ROOT/Cargo.toml" ]; then
-    run_gate "0c cargo fmt"    "$SCOPE_CODE" bash -c "cd '$ROOT' && cargo fmt --all -- --check" || rc=1
-    run_gate "0c cargo clippy" "$SCOPE_CODE" bash -c "cd '$ROOT' && cargo clippy --all-targets --all-features -- -D warnings" || rc=1
+    run_gate "0c cargo fmt"    "$SCOPE_CODE" cargo_fmt_lauf || rc=1
+    run_gate "0c cargo clippy" "$SCOPE_CODE" cargo_clippy_lauf || rc=1
     if [ "$REVIEW_GATE_TIER" = "commit" ]; then
-      run_gate "0c cargo test (änderungsbezogen)" "$SCOPE_CODE" bash -c "cd '$ROOT' && cargo test --all" || rc=1
+      # **Wirklich änderungsbezogen.** Zuvor stand hier `cargo test --all` und
+      # das Protokoll nannte es „änderungsbezogen" — eine Auswahl, die es nicht
+      # gab. CLAUDE.md Abschnitt 13 weist die **volle** Suite ausdrücklich der
+      # Stufe 2 zu („statt der änderungsbezogenen Auswahl des commit-Tiers");
+      # sie lief damit je Commit **und** je Push ein zweites Mal.
+      #
+      # Ausgewählt werden die Kisten, deren Pfade der Änderungssatz berührt.
+      # Berührt er die Wurzelkonfiguration (`Cargo.toml`, `Cargo.lock`), gilt
+      # die volle Suite — eine geänderte Abhängigkeit betrifft alle Kisten.
+      local -a test_pakete test_args; local test_grund k
+      test_pakete=()
+      while IFS= read -r k; do [ -n "$k" ] && test_pakete+=("$k"); done \
+        < <(cargo_pakete_mit_abhaengigen)
+      if [ "${test_pakete[0]:-}" = "--ALLES--" ] || [ "${#test_pakete[@]}" -eq 0 ]; then
+        test_grund="volle Suite — Wurzelkonfiguration berührt oder Auswahl nicht auflösbar"
+        test_args=(--all)
+      else
+        test_grund="änderungsbezogen: ${test_pakete[*]}"
+        test_args=()
+        for k in "${test_pakete[@]}"; do test_args+=(-p "$k"); done
+      fi
+      run_gate "0c cargo test ($test_grund)" "$SCOPE_CODE" \
+        cargo_test_lauf "${test_args[@]}" || rc=1
+      # Lizenz- und Herkunftsprüfung des Rust-Zweigs (SM-OSS-009, SM-OSS-011,
+      # AK-11). Gegenstand ist `deny.toml`; fehlt sie, entfällt die Prüfung,
+      # fehlt das Werkzeug bei vorhandener Datei, blockiert sie (S3).
+      if [ -f "$ROOT/deny.toml" ]; then
+        if command -v cargo-deny >/dev/null 2>&1; then
+          run_gate "0c cargo deny" "$SCOPE_CODE" \
+            cargo_deny_lauf || rc=1
+        else
+          record "0c cargo deny" "FAIL" "deny.toml liegt im Baum, cargo-deny fehlt — 'cargo install cargo-deny'"
+          block "Stufe 0c: cargo deny ist nicht durchführbar."
+          rc=1
+        fi
+      else
+        record "0c cargo deny" "ENTFÄLLT" "keine deny.toml im Baum"
+      fi
     fi
   else
     record "0c Rust-Gates" "ENTFÄLLT" "kein Cargo.toml — es existiert noch kein Quellcode"
@@ -563,16 +913,16 @@ stage2_heavy() {
   fi
   local rc=0
   if [ -f "$ROOT/Cargo.toml" ]; then
-    run_gate "2 volle Testsuite" 1 bash -c "cd '$ROOT' && cargo test --all" || rc=1
+    run_gate "2 volle Testsuite" 1 cargo_test_lauf --all || rc=1
     if have cargo-deny; then
-      run_gate "2 Lizenzprüfung" 1 bash -c "cd '$ROOT' && cargo deny check licenses bans sources" || rc=1
+      run_gate "2 Lizenzprüfung" 1 cargo_deny_lauf || rc=1
     else
       record "2 Lizenzprüfung" "FAIL" "cargo-deny ist nicht installiert"
       block "Stufe 2: cargo-deny fehlt — SM-OSS-009 verlangt die Lizenzprüfung im Bau. Ein nicht durchgeführter Scan ist kein bestandener Scan."
       rc=1
     fi
     if [ -d "$ROOT/fuzz" ] && have cargo-fuzz; then
-      run_gate "2 Fuzzing-Kurzlauf" 1 bash -c "cd '$ROOT' && for t in \$(cargo fuzz list); do cargo fuzz run \$t -- -max_total_time=30 || exit 1; done" || rc=1
+      run_gate "2 Fuzzing-Kurzlauf" 1 cargo_fuzz_lauf || rc=1
     else
       record "2 Fuzzing-Kurzlauf" "ENTFÄLLT" "keine Fuzzing-Ziele vorhanden"
     fi
@@ -695,6 +1045,8 @@ main() {
   stage0_injection || failed=1
   stage0_binary    || failed=1
   if [ "$failed" = 0 ]; then stage0b_selftest || failed=1; fi
+  if [ "$failed" = 0 ]; then stage0b_projektregeln || failed=1; fi
+  if [ "$failed" = 0 ]; then stage0b_plan || failed=1; fi
   if [ "$failed" = 0 ]; then
     if [ "$REVIEW_GATE_RUN_TESTS" = "0" ]; then
       record "0c Schnell-Gates" "FAIL" "REVIEW_GATE_RUN_TESTS=0"
@@ -753,6 +1105,9 @@ if [ "${1:-}" = "__unit" ]; then
   shift; fn="$1"; shift
   WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
   : > "$WORK/stages"; : > "$WORK/blockers"; : > "$WORK/notes"
+  # Der Selbsttest gibt die Dateiliste über SELFTEST_FILES vor; ohne sie
+  # arbeiten die Funktionen wie im Regellauf gegen "$WORK/files".
+  FILES_FILE="${SELFTEST_FILES:-$WORK/files}"; : > "$WORK/files"
   "$fn" "$@"; exit $?
 fi
 
