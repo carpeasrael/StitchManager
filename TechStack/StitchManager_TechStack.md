@@ -3,8 +3,8 @@
 **Kennung:** TEC-STM-001
 **Version:** 2.2
 **Datum:** 23.08.2026
-**Führendes Dokument:** URS-STM-001 (Lastenheft) v1.2
-**Mitgeltend:** DES-STM-001 (Design-Beschreibung) v1.2 · ANA-STM-001 (Konsolidierungsanalyse) v1.1
+**Führendes Dokument:** URS-STM-001 (Lastenheft) v1.3
+**Mitgeltend:** DES-STM-001 (Design-Beschreibung) v1.3 · ANA-STM-001 (Konsolidierungsanalyse) v1.1
 **Status:** Empfehlung zur Entscheidung
 
 > **Änderung gegenüber Version 1.0.** Die erste Fassung empfahl, StitchManager-3 unverändert
@@ -143,7 +143,7 @@ Qt-Werkzeuge ohnehin gehen.
 
 ## 3. Zielarchitektur
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────┐
 │  Oberfläche  —  Qt 6 (LGPL-3)                                │
 │  ┌────────────┬──────────────────┬────────────────────────┐  │

@@ -1,9 +1,10 @@
 # StitchManager — Design-Beschreibung für die Entwicklung
 
 **Kennung:** DES-STM-001
-**Version:** 1.2
-**Datum:** 23.08.2026
-**Führendes Dokument:** URS-STM-001 (Lastenheft) v1.2 — dieses Dokument konkretisiert dessen Kapitel 12
+**Version:** 1.3
+**Datum:** 24.08.2026
+**Führendes Dokument:** URS-STM-001 (Lastenheft) v1.3
+— dieses Dokument konkretisiert dessen Kapitel 12
 **Mitgeltend:** TEC-STM-001 (Tech-Stack) v2.2 · stitchmanager-mockup.html
 **Umsetzung:** Qt 6 (LGPL-3), siehe TEC-STM-001 Abschnitt 2
 
@@ -202,7 +203,7 @@ Die folgenden Werte sind gemessen, nicht geschätzt. Alle Textpaare erreichen mi
 
 ### 6.1 Dreiteilung — senkrecht, unbedingt
 
-```
+```text
 ┌────────────────────────────────────────────────────────────┐
 │ Werkzeugleiste                                       46 px │
 ├──────────┬─────────────────────────┬───────────────────────┤
@@ -277,7 +278,8 @@ ist verbindlich — ein glattes Farbfeld liest sich als Farbwähler, nicht als G
 abgesetzte Fläche mit Pfeil, Ja/Nein als Schalter 34 × 19 px.
 
 **Rahmenprüfung (SM-MAC-002):** Unter den Optionen erscheint eine Hinweisbox, die die
-Musterabmessung gegen das eingestellte Stickfeld des aktiven Maschinenprofils rechnet. Passt es, grün mit ausgewiesener Reserve. Passt es nicht,
+Musterabmessung gegen das eingestellte Stickfeld des aktiven Maschinenprofils rechnet.
+Passt es, grün mit ausgewiesener Reserve. Passt es nicht,
 bernsteinfarben mit Angabe der Überschreitung und einem Vorschlag zum größeren Rahmen.
 Diese Box wird immer angezeigt, nie nur im Fehlerfall — ihre Abwesenheit wäre sonst
 mehrdeutig.
@@ -404,9 +406,18 @@ Lastenhefts URS-STM-001. Gestaltungsrelevant sind dort:
 | **OP-10** | Bleibt die Listenansicht neben der Kachelansicht bestehen? | Entfällt sie, wird der Umschalter aus der Werkzeugleiste gestrichen. |
 | **OP-11** | Erhält der Dunkelmodus ein eigenes Anwendungssymbol? | Betrifft die Ikonografie, nicht das Fenster. |
 | **OP-12** | Zeigt die Übersichtskarte weitere Kennzahlen? | Betrifft Abschnitt 6.2. Weitere Kennzahlen kosten Höhe, die dem Ordnerbaum fehlt. |
+| **OP-15** | Erhalten die leeren, ladenden und fehlerhaften Zustände eine eigene Anforderung? | Betrifft Abschnitt 10. Die sechs Zustände sind hier verbindlich ausformuliert; ohne Kennung sind Leerzustand, Trefferlosigkeit und der Abbruch langer Vorgänge außerhalb der Stapelverarbeitung nicht abnehmbar. |
+| **OP-16** | Erhalten Zustandstabelle und Mindestgrößen eine eigene Anforderung? | Betrifft Abschnitt 7. Ohne Kennung ist die Treffbarkeit kleiner Bedienelemente nicht abnehmbar. Zu klären ist zugleich der Widerspruch zwischen der Ziehfläche der Trenner in Abschnitt 5 und der Mindesttrefferfläche in Abschnitt 7. |
+| **OP-17** | Erhält die Übersichtskarte der Navigationsspalte eine eigene Anforderung? | Betrifft Abschnitt 6.2. Gesamtbestand und Formatverteilung sind hier verbindlich beschrieben, tragen aber keine Kennung. Hängt mit OP-12 zusammen. |
+| **OP-19** | Übersteht die manuelle Wahl der Darstellungsart den Neustart? | Betrifft Abschnitt 11. Von der Antwort hängt ab, ob der Dunkelmodus bei jedem Start neu einzustellen ist. |
+| **OP-20** | Erhalten die Sammelaktionen der Hinweisbox eine eigene Anforderung? | Betrifft Abschnitt 9. „Alle übernehmen“ und „Alle verwerfen“ sind hier verbindlich beschrieben, ohne dass eine Kennung sie trägt. |
 
 Das frühere eigene Register dieses Dokuments (Kennungen D1 bis D5) ist aufgelöst; seine
-Einträge entsprechen der Reihe nach OP-07, OP-09, OP-10, OP-11 und OP-12.
+Einträge entsprechen der Reihe nach OP-07, OP-09, OP-10, OP-11 und OP-12. OP-15 bis OP-17,
+OP-19 und OP-20 sind später hinzugekommen: Sie benennen Stellen, an denen **dieses Dokument**
+Verhalten verbindlich beschreibt, ohne dass das Lastenheft eine Kennung dafür führt. Bis zu
+ihrer Beantwortung hat das beschriebene Verhalten keinen Abnahmebezug — die Arbeitspakete der
+Oberfläche sind dafür gesperrt (IMP-STM-001 Abschnitt 2.1).
 
 ---
 
@@ -414,6 +425,7 @@ Einträge entsprechen der Reihe nach OP-07, OP-09, OP-10, OP-11 und OP-12.
 
 | Version | Datum | Änderung |
 |---|---|---|
+| 1.3 | 24.08.2026 | Abschnitt 13 um **OP-15, OP-16, OP-17, OP-19 und OP-20** ergänzt — Verweise, kein eigenes Register. Alle fünf betreffen Verhalten, das dieses Dokument verbindlich beschreibt, ohne dass URS-STM-001 eine Kennung dafür führt; sie tragen dieselbe Frist wie OP-07, OP-09 und OP-12. Ohne den Eintrag sähe an der maßgeblichen Stelle niemand, dass die Vorgaben derzeit ohne Abnahmebezug sind. Aufgeworfen bei der Design-Prüfung des Implementierungsplans (Runde 14). Nachweis: `Analysis/20260823_03_implementierungsplan.md`. |
 | 1.2 | 23.08.2026 | Farbkorrektur nach einem Befund der Stufe-1-Prüfung (siehe `Analysis/20260823_01_gate-befunde-rueckstand.md`, Befund Curie B-1): Regel 3 in Abschnitt 3.3 erlaubte weiße Schrift auf `--kn-brand`. Nachgerechnet erreicht sie 3,41:1 (hell) und 2,57:1 (dunkel) und verfehlt SM-NFR-007. Neuer Bezeichner `--kn-on-brand` (4,88:1 hell, 6,48:1 dunkel) als einzige Textfarbe auf Terracotta; er ersetzt zugleich das Literal in der Komponententabelle in Abschnitt 7 (SM-DES-003). Verweise auf URS v1.2 und TEC v2.2 nachgezogen. Das Mockup zeigt an dieser Stelle weiterhin den alten Stand — es ist visuelle Referenz, nicht Umsetzungsvorlage, und rangiert nach diesem Dokument. |
 | 1.1 | 23.08.2026 | Abstimmung mit URS-STM-001 v1.1 und TEC-STM-001 v2.1. Verweise SM-DES-008, SM-DES-007, SM-EXP-009 und SM-SEC-009 richtiggestellt (zeigten auf bestehende, aber inhaltlich andere Anforderungen). Eigenes Register (D1 bis D5) aufgelöst. Betriebsmodus in Abschnitt 6.2 ergänzt, Rahmenprüfung an SM-MAC-002 gebunden, Prüfpunkt D-13 ergänzt, Dokumentenhierarchie festgelegt. Nachweis: ABG-STM-001. |
 | 1.0 | 23.08.2026 | Erstfassung. Enthält gegenüber dem Mockup korrigierte Werte für `--kn-ok`, `--kn-warn` (Hellmodus) sowie die Sperre von `--kn-ink-3` für Text — fünf Token-Paare erfüllten WCAG AA nicht und wurden nachgerechnet ersetzt. |
