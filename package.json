@@ -1,0 +1,16 @@
+{
+  "name": "stitchmanager-doku",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Werkzeugbindung der Dokumentprüfungen — kein Anwendungscode. Siehe CLAUDE.md Abschnitt 11. Die Versionsangabe folgt dem Werkstattverbund (SM-PLT-007); sie beschreibt keinen eigenen Auslieferungsstand.",
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint:md": "markdownlint-cli2"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "0.23.2"
+  }
+}

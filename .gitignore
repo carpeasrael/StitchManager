@@ -40,3 +40,46 @@ node_modules/
 #           und dürfen committet werden; rote werden nicht committet und nach
 #           REPORT_RETENTION_DAYS (14) automatisch entfernt, solange sie
 #           ungetrackt sind. Ein Pauschal-Ignore würde den Nachweis beseitigen.
+
+# Fuzzing: Bauverzeichnis und die vom Lauf erzeugten Eingaben.
+#
+# Das Muster nennt keine Kiste. SM-SEC-011 verlangt je Formatparser ein
+# dauerhaftes Ziel; kommt eine zweite Parser-Kiste hinzu, landeten ihr
+# Bauverzeichnis und ihr Korpus sonst ungefiltert im Änderungssatz — als
+# Binärmaterial ohne Herkunftsangabe — dieselbe Fehlerrichtung wie eine
+# gepflegte Kistenaufzählung, die beim nächsten Zuwachs nicht nachgezogen wird.
+# `target/` ist das Bauverzeichnis, `corpus/` der vom Lauf erzeugte
+# Eingabenbestand, `coverage/` die Abdeckungsausgabe von `cargo fuzz coverage`
+# — alle drei reproduzierbar erzeugbar und deshalb nicht versioniert.
+**/fuzz/target/
+**/fuzz/corpus/
+**/fuzz/coverage/
+
+# `artifacts/` bleibt sichtbar, und das mit Absicht: Dort legt cargo-fuzz
+# die Eingabe ab, die einen Parser zu Fall gebracht hat. Genau die ist der
+# Regressionsnachweis zu SM-FMT-012 und SM-SEC-011 — ein Pauschal-Ignore
+# beseitigte ihn, dieselbe Erwägung wie bei `Reviews/` darüber. Ein solcher
+# Fund gehört mit Herkunftsangabe in den Baum und läuft dann durch Stufe 0,
+# Ziffer 4 (Binärdateien), nicht an ihr vorbei.
+#
+# `corpus/` dagegen füllt der Lauf selbst und wächst unbegrenzt; es bleibt
+# gesperrt. Ein versioniertes Saatkorpus gehört deshalb nicht dorthin, sondern
+# neben die Fuzzing-Kiste unter `crates/<kiste>/fuzz-saat/<ziel>/` — mit
+# Herkunftsangabe, wie jedes andere Prüfmaterial (Stufe 0, Ziffer 4).
+#
+# **Der Weg in den Lauf, und warum die Reihenfolge zählt:** Aus dem
+# Kistenverzeichnis heraus
+#     cargo fuzz run <ziel> fuzz/corpus/<ziel> fuzz-saat/<ziel>
+# libFuzzer schreibt neu gefundene Eingaben immer in das **erste** genannte
+# Verzeichnis. Stünde der Saatpfad vorn, füllte der Lauf ihn mit erzeugtem
+# Korpus — in einem Pfad, den kein Muster hier sperrt, und der damit als
+# Binärmaterial ohne Herkunftsangabe in Stufe 0 aufschlüge. Genau die
+# Fehlerrichtung, die dieser Block vermeiden soll. Der Saatpfad steht deshalb
+# hinten und wird nur gelesen.
+#
+# **Und der Absturzfund wandert weiter, statt liegen zu bleiben:** Stufe 2 fährt
+# je Push alle Ziele; jeder Absturz, Timeout und OOM legt in `artifacts/` eine
+# Datei ab. Nach der Auswertung gehört der Fund mit Herkunftsangabe nach
+# `fuzz-saat/<ziel>/`, der Rest von `artifacts/` wird entfernt. Ohne diese Regel
+# wüchse dort eine unverfolgte Menge, die in jeder Dateiliste und in jedem
+# Binärabschnitt der Stufe 0 auftaucht.
