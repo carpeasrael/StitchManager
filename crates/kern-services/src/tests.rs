@@ -531,6 +531,155 @@ fn einlesen_und_warten(betrieb: &Kernbetrieb, horcher: &Horcher) -> kern_fassade
     })
 }
 
+/// Pfade und Inhaltsdigests aller Quelldateien unterhalb der Bibliothek.
+///
+/// Der relative Pfad belegt, dass keine Datei verschoben oder umbenannt wurde;
+/// der Digest belegt den unveränderten Inhalt. Größe allein genügt dafür nicht.
+fn quelldaten_abgleichen(
+    wurzel: &std::path::Path,
+) -> std::collections::BTreeMap<std::path::PathBuf, u64> {
+    use std::hash::{Hash, Hasher};
+
+    fn besuchen(
+        wurzel: &std::path::Path,
+        ordner: &std::path::Path,
+        abbild: &mut std::collections::BTreeMap<std::path::PathBuf, u64>,
+    ) {
+        let mut eintraege: Vec<_> = std::fs::read_dir(ordner)
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .collect();
+        eintraege.sort();
+
+        for pfad in eintraege {
+            if pfad.is_dir() {
+                besuchen(wurzel, &pfad, abbild);
+                continue;
+            }
+            let daten = std::fs::read(&pfad).unwrap();
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            daten.hash(&mut hasher);
+            abbild.insert(
+                pfad.strip_prefix(wurzel).unwrap().to_path_buf(),
+                hasher.finish(),
+            );
+        }
+    }
+
+    let mut abbild = std::collections::BTreeMap::new();
+    besuchen(wurzel, wurzel, &mut abbild);
+    abbild
+}
+
+fn quellbestand_ist_unveraendert(
+    vorher: &std::collections::BTreeMap<std::path::PathBuf, u64>,
+    wurzel: &std::path::Path,
+    lauf: &str,
+) {
+    assert_eq!(
+        &quelldaten_abgleichen(wurzel),
+        vorher,
+        "PF-MIG-05: Der Import hat Quelldateien beim {lauf} verändert"
+    );
+}
+
+// --- PF-MIG-05 / SM-MIG-005: Quelldaten bleiben unverändert ---
+
+#[test]
+fn pf_mig_05_import_veraendert_keine_quelldatei() {
+    let tmp = tempfile::tempdir().unwrap();
+    let bestand = tmp.path().join("bestand");
+    let tief = bestand.join("tiere").join("voegel");
+    std::fs::create_dir_all(&tief).unwrap();
+
+    // Genügend Arbeit, damit der Abbruch sicher zwischen zwei Dateien greift.
+    // Ein Teil liegt in Unterordnern; die beschädigte Datei muss trotzdem als
+    // sichtbarer Fehlereintrag in den Bestand gelangen.
+    for i in 0..350 {
+        let ordner = if i % 3 == 0 { &tief } else { &bestand };
+        let punkte: Vec<(f64, f64)> = (0..40)
+            .map(|k| (k as f64, ((k * (i + 1)) % 19) as f64))
+            .collect();
+        schreibe_muster(&ordner.join(format!("quelle{i:04}.dst")), punkte);
+    }
+    std::fs::write(tief.join("beschaedigt.pes"), vec![0xFFu8; 4096]).unwrap();
+
+    let (betrieb, horcher) = betrieb_mit(&bestand);
+
+    let vor_abbruch = quelldaten_abgleichen(&bestand);
+    assert_eq!(vor_abbruch.len(), 351, "der Prüfbestand ist unvollständig");
+    betrieb.beauftragen(Befehl::BestandEinlesen);
+    horcher.warte_auf("EinlesenBegonnen", |a| match a {
+        Antwort::EinlesenBegonnen { gesamt } => Some(*gesamt),
+        _ => None,
+    });
+    betrieb.abbrechen();
+    let abgebrochen = horcher.warte_auf("EinlesenFertig nach Abbruch", |a| match a {
+        Antwort::EinlesenFertig { abgebrochen, .. } => Some(*abgebrochen),
+        _ => None,
+    });
+    assert!(
+        abgebrochen,
+        "der Prüflauf wurde nicht als abgebrochen gemeldet"
+    );
+    quellbestand_ist_unveraendert(&vor_abbruch, &bestand, "abgebrochenen Lauf");
+
+    let vor_erstlauf = quelldaten_abgleichen(&bestand);
+    einlesen_und_warten(&betrieb, &horcher);
+    quellbestand_ist_unveraendert(&vor_erstlauf, &bestand, "vollständigen Erstlauf");
+
+    betrieb.beauftragen(Befehl::Ausschnitt {
+        abfrage: Abfrage::default(),
+        versatz: 0,
+        anzahl: 400,
+        mit_gesamtzahl: true,
+    });
+    let kacheln = horcher.warte_auf("Seite nach Erstlauf", |a| match a {
+        Antwort::Seite(s) => Some(s.kacheln.clone()),
+        _ => None,
+    });
+    assert_eq!(
+        kacheln.len(),
+        351,
+        "der Erstlauf hat Quelldateien ausgelassen"
+    );
+    assert!(
+        kacheln.iter().any(|k| {
+            k.pfad.ends_with("tiere/voegel/beschaedigt.pes") && k.fehlergrund.is_some()
+        }),
+        "die beschädigte Quelldatei wurde nicht als Fehlereintrag erfasst"
+    );
+
+    let vor_zweitlauf = quelldaten_abgleichen(&bestand);
+    let zweit = einlesen_und_warten(&betrieb, &horcher);
+    assert_eq!(
+        zweit.neu, 0,
+        "der inkrementelle Lauf nahm Dateien erneut auf"
+    );
+    assert_eq!(
+        zweit.geaendert, 0,
+        "der inkrementelle Lauf meldete Änderungen"
+    );
+    assert_eq!(zweit.unveraendert, 351);
+    quellbestand_ist_unveraendert(&vor_zweitlauf, &bestand, "inkrementellen Zweitlauf");
+
+    // Neben dem unveränderten Quellbaum darf nur die ausdrücklich außerhalb
+    // angelegte Vorschauablage entstehen; die Datenbank dieses Falls ist im
+    // Speicher. Damit berührt der Lauf keinen weiteren dauerhaften Ort.
+    let mut nachbarn: Vec<_> = std::fs::read_dir(tmp.path())
+        .unwrap()
+        .map(|e| e.unwrap().file_name())
+        .collect();
+    nachbarn.sort();
+    assert_eq!(
+        nachbarn,
+        vec![
+            std::ffi::OsString::from("bestand"),
+            std::ffi::OsString::from("speicher")
+        ]
+    );
+}
+
 #[test]
 fn zweiter_lauf_nimmt_nichts_auf_und_weist_nichts_ab() {
     let tmp = bestand_anlegen(30);

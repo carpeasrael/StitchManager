@@ -1291,22 +1291,23 @@ wird — die Endpunkte, nicht den vollständigen Aufrufweg. Dass jeder Weg von e
 zu `kern/db` über `kern/fassade` führt, folgt aus Schnittregel 1 und wird nicht in jeder Zeile
 wiederholt.
 
-**Die Ergebnisspalte steht durchgehend auf `offen`** und wird erst durch den tatsächlichen
-Prüflauf fortgeschrieben (`CLAUDE.md` Abschnitt 10, Phase 4).
+**Die Ergebnisspalte bleibt bis zum tatsächlichen Prüflauf auf `offen`** und wird erst mit einem
+ausführbaren, bestandenen Nachweis fortgeschrieben (`CLAUDE.md` Abschnitt 10, Phase 4). Der
+Eintrag nennt den ausgeführten Regellauf; ausgesetzte Fälle werden nicht als bestanden gewertet.
 
 | Anforderung | Prio | Prüf | AP | Modul | Prüffall | Ergebnis |
 |---|---|---|---|---|---|---|
 | SM-LIB-001 | M | T | AP-07 | `kern/services · ui/fenster` | PF-LIB-01.1, .2 | offen |
 | SM-LIB-002 | M | D | AP-12 | `ui/navigation` | PF-LIB-02 | offen |
-| SM-LIB-003 | M | T | AP-07 | `kern/services` | PF-LIB-03 | offen |
+| SM-LIB-003 | M | T | AP-07 | `kern/services` | PF-LIB-03 | bestanden — `cargo test -p kern-services pf_mig_05_import_veraendert_keine_quelldatei` (29.08.2026: 1 bestanden) |
 | SM-LIB-004 | M | T | AP-07 | `kern/services` | PF-LIB-04 | offen |
 | SM-LIB-009 | M | A | AP-07 | `kern/services` | PF-LIB-09 | offen |
-| SM-LIB-010 | M | T | AP-04 | `kern/db` | PF-LIB-10 | offen |
-| SM-IMP-001 | M | T | AP-08 | `kern/services` | PF-IMP-01 | offen |
+| SM-LIB-010 | M | T | AP-04 | `kern/db` | PF-LIB-10 | bestanden — `cargo test -p kern-db` (29.08.2026: 25 bestanden; Kennungsfälle enthalten) |
+| SM-IMP-001 | M | T | AP-08 | `kern/services` | PF-IMP-01 | bestanden — `cargo test -p kern-services pf_mig_05_import_veraendert_keine_quelldatei` (29.08.2026: 1 bestanden) |
 | SM-IMP-002 | M | D | AP-12 | `ui/fenster · kern/services` | PF-IMP-02 | offen |
-| SM-IMP-003 | M | T | AP-08 | `kern/services` | PF-IMP-03 | offen |
+| SM-IMP-003 | M | T | AP-08 | `kern/services` | PF-IMP-03 | bestanden — `cargo test -p kern-fassade -p kern-services` (29.08.2026: 29 + 18 bestanden; Änderungsfälle enthalten) |
 | SM-IMP-005 | M | T | AP-08 | `kern/services · ui/dialoge` | PF-IMP-05.1, .2 | offen |
-| SM-IMP-009 | M | T | AP-08 | `kern/services` | PF-IMP-09 | offen |
+| SM-IMP-009 | M | T | AP-08 | `kern/services` | PF-IMP-09 | bestanden — `cargo test -p kern-services defekte_dateien_halten_den_lauf_nicht_an` (29.08.2026: 1 bestanden) |
 | SM-FMT-001 | M | T | AP-06 | `kern/parsers` | PF-FMT-01 | offen |
 | SM-FMT-002 | M | T | AP-06 | `kern/parsers` | PF-FMT-02 | offen |
 | SM-FMT-003 | M | T | AP-06 | `kern/parsers` | PF-FMT-03 | offen |
@@ -1327,7 +1328,7 @@ Prüflauf fortgeschrieben (`CLAUDE.md` Abschnitt 10, Phase 4).
 | SM-MET-010 | S¹ | T | AP-13 | `ui/detail` | PF-MET-10 | offen |
 | SM-PRV-001 | M | D | AP-09 | `kern/render` | PF-PRV-01 | offen |
 | SM-PRV-002 | M | T | AP-09 | `kern/render` | PF-PRV-02 | offen |
-| SM-PRV-003 | M | T | AP-09 | `kern/render` | PF-PRV-03 | offen |
+| SM-PRV-003 | M | T | AP-09 | `kern/render` | PF-PRV-03 | bestanden — `cargo test -p kern-render -p kern-services` (29.08.2026: 21 + 18 bestanden; Verwerfungsfälle enthalten) |
 | SM-PRV-007 | M | A | AP-12 | `ui/auswahl · ui/detail` | PF-PRV-07.1, .2 | offen |
 | SM-PRV-009 | M | D | AP-12 | `ui/auswahl` | PF-PRV-09 | offen |
 | SM-SRC-001 | M | T | AP-10 | `kern/db` | PF-SRC-01 | offen |
@@ -1370,14 +1371,14 @@ Prüflauf fortgeschrieben (`CLAUDE.md` Abschnitt 10, Phase 4).
 | SM-DAT-001 | M | T | AP-04 | `kern/services · ui/dialoge` | PF-DAT-01.1, .2 | offen |
 | SM-DAT-003 | M | D | AP-12 | `ui/dialoge` | PF-DAT-03.1 bis .3 | offen |
 | SM-DAT-006 | M | T | AP-04 | `kern/db` | PF-DAT-06 | offen |
-| SM-DAT-007 | M | I | AP-04 | `kern/db` | PF-DAT-07 | offen |
+| SM-DAT-007 | M | I | AP-04 | `kern/db` | PF-DAT-07 | bestanden — `cargo test -p kern-db` (29.08.2026: 25 bestanden; Migrationsprüfsummen und Wiederholung enthalten) |
 | SM-DAT-008 | M | T | AP-04 | `kern/db` | PF-DAT-08 | offen |
 | SM-SET-001 | M | D | AP-11 | `ui/gestaltung · ui/auswahl` | PF-SET-01.1, .2 | offen |
 | SM-SET-002 | S¹ | T | AP-11 | `ui/gestaltung · ui/fenster` | PF-SET-02.1, .2 | offen |
 | SM-SET-003 | S¹ | T | AP-11 | `ui/gestaltung` | PF-SET-03 | offen |
 | SM-SET-004 | S¹ | D | AP-11 | `ui/gestaltung` | PF-SET-04.1, .2 | offen |
 | SM-SET-006 | M | I | AP-12 | `ui (durchgehend)` | PF-SET-06 | offen |
-| SM-MIG-005 | M | T | AP-19 | `kern/services` | PF-MIG-05 | offen |
+| SM-MIG-005 | M | T | AP-19 | `kern/services` | PF-MIG-05 | bestanden — `cargo test -p kern-services pf_mig_05_import_veraendert_keine_quelldatei` (29.08.2026: 1 bestanden) |
 | SM-DTA-001 | M | I | AP-05 | `kern/fassade` | PF-DTA-01 | offen |
 | SM-DTA-002 | M | I | AP-04 | `kern/db` | PF-DTA-02 | offen |
 | SM-DTA-003 | M | T | AP-04 | `kern/db` | PF-DTA-03 | offen |
@@ -1438,6 +1439,46 @@ Prüflauf fortgeschrieben (`CLAUDE.md` Abschnitt 10, Phase 4).
 Soll-Anforderungen. Keine Kennung doppelt, keine Muss-Anforderung ohne Arbeitspaket, keine
 Prüffallkennung doppelt. Die Zuordnungsspalte ist aus den Zuordnungslisten in Kapitel 4 erzeugt,
 nicht daneben gepflegt — beide können nicht auseinanderlaufen.
+
+### 7.1 Ist-Abgleich vom 29.08.2026
+
+Alle 137 Zeilen wurden gegen den Quellstand und den Regellauf
+`cargo test -p kern-db -p kern-fassade -p kern-render -p kern-services --all-targets`
+abgeglichen. Ergebnis: 93 bestanden, 0 fehlgeschlagen, 2 als Messfälle ausgesetzt. Die beiden
+ausgesetzten 100.000-Einträge-Fälle bleiben Regressionsmessungen und begründen wegen OP-08
+keinen Statuswechsel. Acht Anforderungen besitzen jetzt einen vollständigen, ausgeführten
+Erstnachweis; 129 bleiben `offen`. Komponenten- und Teiltests werden dabei nicht als Abnahme
+einer umfassenderen Anforderung gezählt.
+
+| Arbeitspaket | Zeilen | bestanden | Grund für verbleibende offene Zeilen |
+|---|---:|---:|---|
+| AP-01 | 10 | 0 | Lizenz-, Stücklisten- und Auslieferungsnachweise fehlen |
+| AP-02 | 1 | 0 | plattformübergreifende Prüfkette und formaler 100.000-Dateien-Prüfbestand fehlen |
+| AP-03 | 4 | 0 | Pfadprüfungen decken Bibliothek, aber noch nicht Export- und Sicherungsziel auf allen Plattformen |
+| AP-04 | 9 | 2 | PF-LIB-10 und PF-DAT-07 bestehen; Sicherung, Wiederanlauf, Zeitzonen- und vollständige Inspektionsnachweise fehlen |
+| AP-05 | 2 | 0 | Komponenten- und Schichtinspektion ist noch nicht als PF-SEC-04.1/.2 und PF-DTA-01 abgeschlossen |
+| AP-06 | 9 | 0 | Parser bestehen komponentenseitig; Prüfdateibestand, Inhaltserkennung und ausgeführte Fuzzing-Nachweise fehlen |
+| AP-07 | 4 | 1 | PF-LIB-03 besteht; mehrere Wurzeln, Ordneroperationen und 100.000-Einträge-Nachweis fehlen |
+| AP-08 | 6 | 3 | PF-IMP-01, PF-IMP-03 und PF-IMP-09 bestehen; Duplikatentscheidung sowie vollständige Hintergrund- und Fehlerzweige fehlen |
+| AP-09 | 3 | 1 | PF-PRV-03 besteht; visuelle Vorschauabnahme und durch OP-21/PV-09 offene Speichergrenze fehlen |
+| AP-10 | 7 | 0 | Filter- und Sortierumfang ist unvollständig; die beiden ausgesetzt laufenden Messfälle bleiben Regressionswerte |
+| AP-11 | 12 | 0 | offene UI-Entscheidungen und Demonstrations-/Inspektionsnachweise sperren den Abschluss |
+| AP-12 | 14 | 0 | Oberfläche ist nur teilweise umgesetzt; Demonstrationen und Messungen fehlen |
+| AP-13 | 7 | 0 | Detailanzeige und Metadatenbearbeitung fehlen |
+| AP-14 | 4 | 0 | Dokumentpfad fehlt |
+| AP-15 | 10 | 0 | Druckpfad und körperliche Messung fehlen |
+| AP-16 | 6 | 0 | Export- und Datenträgerpfad fehlen |
+| AP-17 | 5 | 0 | Stapelverarbeitung fehlt |
+| AP-18 | 11 | 0 | Analyse-, Zustimmungs- und Schlüsselspeicherpfad fehlen |
+| AP-19 | 1 | 1 | PF-MIG-05 besteht; keine Restzeile |
+| AP-20 | 1 | 0 | vollständiger Protokollmaskierungsnachweis fehlt |
+| AP-21 | 11 | 0 | Paketierung und Plattformnachweise fehlen |
+
+**Folgeaufgaben aus dem Abgleich:** PF-SEC-04.1/.2 und PF-DTA-01 als ausdrückliche
+Architekturinspektion automatisieren; die fehlenden Filter- und Sortierzweige vor PF-SRC-01 bis
+PF-SRC-10 ergänzen; die Parserfälle erst nach Bereitstellung des Prüfdateibestands und einem
+ausgeführten Fuzzing-Lauf fortschreiben; PF-PRV-02 bis zur Entscheidung OP-21/PV-09 offen
+halten. Diese Lücken werden nicht durch die grüne Paketsumme verdeckt.
 
 ---
 

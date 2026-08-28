@@ -266,3 +266,41 @@ Nach erfolgreichem Sprint ist die sinnvolle Reihenfolge:
 Der nächste Sprint sollte nicht gleichzeitig das vollständige AP-13 und ein weiteres großes
 Oberflächenpaket versprechen. AP-13 verändert Schema, Fassade, Hintergrundbetrieb und QML und
 trägt sieben unmittelbar zugeordnete Anforderungen sowie zahlreiche Querschnittsnachweise.
+
+## 7. Umsetzungsstand
+
+### 7.1 SP-01 · Quellstand reproduzierbar machen
+
+**Abgeschlossen am 29.08.2026.** Der zuvor unversionierte Bestand wurde in fünf fachlich
+getrennten lokalen Änderungssätzen aufgenommen: Werkzeugkette, Planung und Nachweise,
+Kernbibliotheken, Daten-/Dienstschicht sowie Desktop-Oberfläche. Die deterministischen Stufen
+0a bis 0c waren vor jedem Satz grün. Der unabhängige Reviewer war nach zwei vorgeschriebenen
+Rauchtests nicht erreichbar, weil Claude Code nicht angemeldet ist; jeder betroffene Commit
+trägt deshalb den vorgeschriebenen Trailer `Gate-Override: reviewer-nicht-erreichbar`. Die
+Nachprüfung durch den unabhängigen Reviewer bleibt vor einer Veröffentlichung verpflichtend.
+
+### 7.2 SP-04 · SM-MIG-005
+
+**Technisch abgeschlossen am 29.08.2026.** Der automatisierte Fall
+`pf_mig_05_import_veraendert_keine_quelldatei` vergleicht relative Speicherorte und
+Inhaltsdigests aller 351 Quelldateien vor und nach einem abgebrochenen Lauf, dem vollständigen
+Erstlauf und dem inkrementellen Zweitlauf. Der Bestand enthält verschachtelte Unterordner und
+eine beschädigte PES-Datei, die als Fehlereintrag erhalten bleibt. Datenbank und
+Vorschauablage liegen außerhalb des Quellbaums. Ausgeführter Nachweis:
+
+```text
+cargo test -p kern-services pf_mig_05_import_veraendert_keine_quelldatei
+1 bestanden; 0 fehlgeschlagen; 0 ausgesetzt
+```
+
+Die Zeile SM-MIG-005 in der führenden Rückverfolgbarkeitsmatrix ist mit genau diesem
+Regellauf auf `bestanden` fortgeschrieben.
+
+### 7.3 SP-03 · Rückverfolgbarkeit
+
+**Abgeschlossen am 29.08.2026.** Alle 137 Matrixzeilen wurden nach Arbeitspaket gegen den
+Quellstand und die ausgeführten Kernprüfungen abgeglichen. Acht vollständig gedeckte
+Anforderungen stehen auf `bestanden`, 129 bleiben `offen`. Die zwei ausgesetzt laufenden
+100.000-Einträge-Messfälle wurden ausdrücklich nicht hochgestuft; ihre vorhandenen Werte sind
+ohne das Referenzgerät aus OP-08 nur Regressionswerte. Der Implementierungsplan enthält den
+paketweisen Abgleich und die daraus abgeleiteten Folgeaufgaben.
