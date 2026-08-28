@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="184" viewBox="0 0 760 184" role="img" aria-labelledby="title desc">
+  <title id="title">StitchManager</title>
+  <desc id="desc">Kreuzstich-Signet und Schriftzug in Terracotta und warmem Espresso</desc>
+  <style>
+    .name { font: 600 68px "Josefin Sans", "Avenir Next", "Century Gothic", sans-serif; letter-spacing: 1px; }
+    .tagline { font: 400 20px Lato, "Helvetica Neue", sans-serif; letter-spacing: 2px; }
+    .ink { fill: #2e2a27; }
+    .muted { fill: #6e6259; }
+    .brand { color: #c2452f; fill: #c2452f; }
+    .seam { stroke: #cbbaa4; }
+    @media (prefers-color-scheme: dark) {
+      .ink { fill: #f3e9dd; }
+      .muted { fill: #b3a294; }
+      .brand { color: #f0836e; fill: #f0836e; }
+      .seam { stroke: #5c4c40; }
+    }
+  </style>
+  <g class="brand" transform="translate(34 29)">
+    <path d="M12 12 L112 112 M112 12 L12 112" stroke="currentColor" stroke-width="18" stroke-linecap="round" fill="none"/>
+  </g>
+  <text class="name ink" x="182" y="91">Stitch<tspan class="brand">Manager</tspan></text>
+  <path class="seam" d="M184 113 H720" stroke-width="2" stroke-dasharray="12 10" fill="none"/>
+  <text class="tagline muted" x="184" y="151">STICKDATEIEN. SCHNITTMUSTER. GEORDNET.</text>
+</svg>
