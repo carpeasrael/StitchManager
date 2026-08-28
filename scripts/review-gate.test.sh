@@ -191,11 +191,21 @@ make_repo() {   # $1 = Name → gibt den Pfad aus
   # Auch der Selbsttest: Ohne ihn ist der zugehörige Zweig in jedem Prüfrepo
   # tot und würde vom Selbsttest nie durchlaufen.
   cp "$ROOT/scripts/check-projektregeln.test.sh" "$d/scripts/check-projektregeln.test.sh" 2>/dev/null || true
+  # Dasselbe für die QML-Prüfung: Ohne beide Dateien meldete `stage0b_qml` in
+  # jedem Prüfrepo „kein Prüfer im Baum", und der Zweig `0c QML` liefe nie —
+  # die Verdrahtung wäre vollständig ungeprüft.
+  cp "$ROOT/scripts/check-qml.sh"      "$d/scripts/check-qml.sh"      2>/dev/null || true
+  cp "$ROOT/scripts/check-qml.test.sh" "$d/scripts/check-qml.test.sh" 2>/dev/null || true
   # Gemeinsame Regeln und Positivliste. Ohne sie meldet `check-docs.sh` im
   # Prüfrepo FAIL wegen fehlender Bibliothek — und der Fall prüfte nie das,
   # worum es ihm geht.
   mkdir -p "$d/scripts/lib"
   cp "$ROOT/scripts/lib/gestaltung.sh" "$d/scripts/lib/gestaltung.sh" 2>/dev/null || true
+  # Die gemeinsame Dateiliste ebenso: Alle drei Prüfskripte binden sie ein und
+  # brechen ohne sie ab (S3) — die Prüfrepos fielen dann in Stufe 0c aus, und
+  # geprüft würde nie die Sache, um die es dem Fall geht.
+  cp "$ROOT/scripts/lib/dateien.sh" "$d/scripts/lib/dateien.sh" 2>/dev/null || true
+  cp "$ROOT/scripts/lib/pruefumgebung.sh" "$d/scripts/lib/pruefumgebung.sh" 2>/dev/null || true
   cp "$ROOT/scripts/lib/lizenzen.py"  "$d/scripts/lib/lizenzen.py"  2>/dev/null || true
   cp "$ROOT/.lizenzen.conf" "$d/.lizenzen.conf" 2>/dev/null || true
   chmod +x "$d/scripts/"*.sh
@@ -468,6 +478,209 @@ out="$(cd "$d" && REVIEW_GATE_CLI="$TMPROOT/cli-ok" bash ./scripts/review-gate.s
 is "I2 fehlender Planprüfer-Selbsttest blockiert" "1" "$rc"
 case "$out" in *"Selbsttest"*) r=0 ;; *) r=1 ;; esac
 is "I2b und die Meldung nennt ihn" "0" "$r"
+
+# ── I · QML-Prüfung: dieselbe Verdrahtung, dieselben Zusagen ───────────────
+#
+# Der QML-Prüfer kam als dritter hauseigener Prüfer hinzu. Ohne diese Fälle
+# wäre seine Verdrahtung vollständig ungeprüft — genau die Lage, gegen die I1
+# und I2 für die Schwestern angelegt wurden.
+r=1
+while IFS= read -r zeile; do
+  case "$zeile" in *"stage0b_qml || failed=1"*) r=0 ;; esac
+done < "$GATE"
+is "I3 der QML-Selbsttest ist eine eigene 0b-Stufe" "0" "$r"
+
+r=1
+while IFS= read -r zeile; do
+  case "$zeile" in *"stage0b_selbsttest \"QML-Prüfung\""*) r=0 ;; esac
+done < "$GATE"
+is "I3b und teilt sich die Verdrahtung mit den Schwestern" "0" "$r"
+
+# Hauseigener Prüfer mit Rückgabewert 3 → er bekommt das ENTFÄLLT-Flag
+# (K5-Analogon). Ohne es meldete „kein *.qml im Baum" FAIL statt ENTFÄLLT.
+r=1
+while IFS= read -r zeile; do
+  case "$zeile" in
+    *"run_gate --rc3-entfaellt"*"check-qml.sh"*) r=0 ;;
+  esac
+done < "$GATE"
+is "I4 der QML-Prüfer bekommt das ENTFÄLLT-Flag" "0" "$r"
+
+# **Der Gegenstand ist `*.qml`, nicht `Cargo.toml`.** Stünde der Aufruf im
+# Cargo-Block, fehlte das Gate unter Weg B (QML ohne Rust-Projekt) im Protokoll
+# ganz — weder PASS noch ENTFÄLLT. Geprüft wird die Verschachtelung: Der
+# Aufruf steht nach dem `fi`, das den Cargo-Block schließt.
+r=1; im_block=0
+while IFS= read -r zeile; do
+  case "$zeile" in
+    *'if [ -f "$ROOT/Cargo.toml" ]'*) im_block=1 ;;
+    *'record "0c Rust-Gates" "ENTFÄLLT"'*) im_block=2 ;;
+    *"run_gate --rc3-entfaellt"*"check-qml.sh"*) [ "$im_block" != 1 ] && r=0 ;;
+  esac
+done < "$GATE"
+is "I5 das QML-Gate hängt nicht am Cargo-Block" "0" "$r"
+
+# Fehlt der Selbsttest zum vorhandenen Prüfer, ist das FAIL, nicht ENTFÄLLT.
+d="$(make_repo qml_ohne_selbsttest)"
+rm -f "$d/scripts/check-qml.test.sh"
+echo "Änderung" >> "$d/README.md"; git -C "$d" add -A >/dev/null 2>&1
+# `GATE_SELFTEST_ACTIVE=1` wie im test-eigenen run_gate-Helfer: Geprüft wird
+# die Verdrahtung, nicht ein nochmaliger Lauf der Schwester-Selbsttests im
+# geschachtelten Gate. Die Abfrage „Prüfer da, Selbsttest fehlt → FAIL" steht
+# in `stage0b_selbsttest` **vor** dieser Abschirmung und greift unverändert.
+out="$(cd "$d" && GATE_SELFTEST_ACTIVE=1 REVIEW_GATE_CLI="$TMPROOT/cli-ok" \
+        bash ./scripts/review-gate.sh 2>&1)"; rc=$?
+is "I6 fehlender QML-Selbsttest blockiert" "1" "$rc"
+
+# Und der Gegenbeweis zur Anwendbarkeit: Liegt kein `*.qml` im Prüfrepo, steht
+# das Gate namentlich als ENTFÄLLT im Protokoll — nie als PASS und nie gar nicht.
+#
+# **Der Änderungssatz muss Codebezug haben.** Eine reine `README.md`-Änderung
+# setzt `SCOPE_CODE=0`; `run_gate` schriebe dann „ENTFÄLLT — vom Änderungssatz
+# nicht betroffen", **ohne den Prüfling je zu starten**. Der Fall bestünde auch
+# dann, wenn `--rc3-entfaellt` fehlte — also genau in dem Fehlerbild, gegen das
+# er angelegt ist. Geprüft wird deshalb zusätzlich der **Grund**.
+d="$(make_repo qml_ohne_gegenstand)"
+: > "$d/beispiel.rs"
+echo "Änderung" >> "$d/README.md"; git -C "$d" add -A >/dev/null 2>&1
+(cd "$d" && GATE_SELFTEST_ACTIVE=1 REVIEW_GATE_CLI="$TMPROOT/cli-ok" \
+   bash ./scripts/review-gate.sh >/dev/null 2>&1)
+p_qml="$(ls -1t "$d/Reviews"/*.md 2>/dev/null | head -1)"
+r=1
+if [ -n "$p_qml" ]; then
+  while IFS= read -r zeile; do
+    case "$zeile" in
+      *"0c QML"*"ENTFÄLLT"*"kein *.qml im Baum"*) r=0 ;;
+    esac
+  done < "$p_qml"
+fi
+is "I6b ohne *.qml steht das Gate mit seinem Grund als ENTFÄLLT im Protokoll" "0" "$r"
+
+# **I7 prüft das Verhalten, nicht den Skripttext.** I3 bis I5 vergleichen
+# Textmuster in `review-gate.sh`; fiele dort das `|| rc=1` weg oder änderte
+# `run_gate` seine Abbildung, stünde „0c QML | FAIL" im Protokoll, und das Gate
+# liefe trotzdem in Stufe 1 weiter — ein rotes Pflicht-Gate ohne Sperrwirkung,
+# bemerkt von keinem Fall. Das K3-Gegenstück für die Projektregeln gibt es seit
+# jeher; für die QML-Prüfung fehlte es.
+d="$(make_repo qml_rot)"
+cat > "$d/scripts/check-qml.sh" <<'QQ'
+#!/usr/bin/env bash
+echo "QML-Prüfung: 1 Befund(e)"
+exit 1
+QQ
+chmod +x "$d/scripts/check-qml.sh"
+printf 'fn main() {}\n' > "$d/beispiel.rs"
+git -C "$d" add -A >/dev/null 2>&1
+rc="$(run_gate "$d" REVIEW_GATE_CLI="$TMPROOT/cli-ok" FAKE_CALLS="$TMPROOT/callsq")"
+is "I7 rote QML-Prüfung blockiert" "1" "$rc"
+repq="$(ls -1t "$d/Reviews"/*.md 2>/dev/null | head -1)"
+r=1
+if [ -n "$repq" ]; then
+  while IFS= read -r zeile; do
+    case "$zeile" in *"| 0c QML |"*FAIL*) r=0 ;; esac
+  done < "$repq"
+fi
+is "I7b und steht als FAIL in der eigenen Zeile" "0" "$r"
+
+# ── I8 · check-docs.sh hat keinen eigenen Selbsttest ───────────────────────
+#
+# Sein fail-closed-Zweig zum fehlenden Git-Arbeitsbaum kam mit der gemeinsamen
+# Dateiliste hinzu. Ohne diesen Fall bliebe ein Rückfall auf `|| true`
+# unbemerkt, und die Dokumentprüfungen meldeten grün über eine leere Menge.
+d="$(make_repo docs_ohne_arbeitsbaum)"
+printf 'Text\n' >> "$d/README.md"
+git -C "$d" add -A >/dev/null 2>&1
+out="$( cd "$d" && rm -rf .git && GIT_CEILING_DIRECTORIES="$TMPROOT" \
+        bash ./scripts/check-docs.sh 2>&1 )"; rc=$?
+is "I8 check-docs blockiert ohne Git-Arbeitsbaum" "1" "$rc"
+case "$out" in *"Kein Git-Arbeitsbaum"*) r=0 ;; *) r=1 ;; esac
+is "I8b und benennt den Grund" "0" "$r"
+
+# Und der zweite neue fail-closed-Zweig derselben Datei: fehlt die gemeinsame
+# Bibliothek, ist der Prüfbereich nicht bildbar — FAIL, nicht leer grün.
+d="$(make_repo docs_ohne_bibliothek)"
+rm -f "$d/scripts/lib/dateien.sh"
+printf 'Text\n' >> "$d/README.md"
+git -C "$d" add -A >/dev/null 2>&1
+out="$( cd "$d" && bash ./scripts/check-docs.sh 2>&1 )"; rc=$?
+is "I9 check-docs blockiert ohne die Dateilisten-Bibliothek" "1" "$rc"
+case "$out" in *"dateien.sh fehlt"*) r=0 ;; *) r=1 ;; esac
+is "I9b und benennt sie" "0" "$r"
+
+# Und derselbe Vertrag für den Fall, dass `git ls-files` selbst abbricht:
+# `check-docs.sh` darf dann nicht grün über eine leere Menge melden.
+d="$(make_repo docs_git_bricht_ab)"
+mkdir -p "$d/attrappe"
+cat > "$d/attrappe/git" <<'ATTRAPPE'
+#!/bin/sh
+# rev-parse gelingt und antwortet wie das echte git; ls-files bricht ab — die
+# Lage eines beschädigten Index. Ein rev-parse ohne Antwort wäre etwas anderes:
+# Der Prüfling leitete daraus eine leere Wurzel ab und scheiterte an den
+# Bibliothekspfaden statt an der Dateiliste.
+for a in "$@"; do
+  case "$a" in
+    --show-toplevel)       pwd; exit 0 ;;
+    --is-inside-work-tree) echo true; exit 0 ;;
+    ls-files)              exit 128 ;;
+  esac
+done
+exit 0
+ATTRAPPE
+chmod +x "$d/attrappe/git"
+printf 'Text\n' >> "$d/README.md"
+git -C "$d" add -A >/dev/null 2>&1
+out="$( cd "$d" && PATH="$d/attrappe:$PATH" bash ./scripts/check-docs.sh 2>&1 )"; rc=$?
+is "I10 check-docs blockiert bei abgebrochenem git ls-files" "1" "$rc"
+case "$out" in *"nicht bildbar"*) r=0 ;; *) r=1 ;; esac
+is "I10b und benennt den Grund" "0" "$r"
+
+# ── I11 · scripts/lib/pruefumgebung.sh — beide fail-closed-Zweige ──────────
+#
+# Die Bibliothek kam mit diesem Änderungssatz und trägt zwei Zweige ohne
+# Negativfall: fehlende Bibliothek und fehlende Zeitgrenze. Beide sperren einen
+# Selbsttest der Stufe 0b, also jeden Commit — sie brauchen einen Nachweis, dass
+# sie mit einer Meldung sperren, die auf die Ursache zeigt (S1/S3).
+d="$(make_repo pruefumgebung_fehlt)"
+rm -f "$d/scripts/lib/pruefumgebung.sh"
+out="$( cd "$d" && bash ./scripts/check-qml.test.sh 2>&1 )"; rc=$?
+is "I11 fehlende Umgebungsbibliothek blockiert den Selbsttest" "1" "$rc"
+case "$out" in *"pruefumgebung.sh fehlt"*) r=0 ;; *) r=1 ;; esac
+is "I11b und benennt sie" "0" "$r"
+
+# Und die fehlende Zeitgrenze: ein Suchpfad **mit** dem Grundsystem, aber ohne
+# `timeout`/`gtimeout`. Ein leerer Pfad bewiese etwas anderes — dort fehlte
+# schon die Schale, und der Fall zeigte auf sich selbst statt auf die Zeitgrenze.
+d="$(make_repo pruefumgebung_ohne_zeitgrenze)"
+mkdir -p "$d/ohnezeit"
+altes_ifs="$IFS"; IFS=:
+for verz in $PATH; do
+  IFS="$altes_ifs"
+  [ -d "$verz" ] && ln -s "$verz"/* "$d/ohnezeit"/ 2>/dev/null
+  IFS=:
+done
+IFS="$altes_ifs"
+rm -f "$d/ohnezeit/timeout" "$d/ohnezeit/gtimeout"
+out="$( cd "$d" && PATH="$d/ohnezeit" bash ./scripts/check-qml.test.sh 2>&1 )"; rc=$?
+is "I11c fehlende Zeitgrenze blockiert den Selbsttest" "1" "$rc"
+case "$out" in *"coreutils"*) r=0 ;; *) r=1 ;; esac
+is "I11d und nennt den Bezugsweg" "0" "$r"
+
+# ── I12 · Die beiden Zusagen der Fuzzing-Muster in .gitignore ──────────────
+#
+# `**/fuzz/corpus/` ist gesperrt, `**/fuzz/artifacts/` bleibt **sichtbar**: Dort
+# liegt die Eingabe, die einen Parser zu Fall gebracht hat — der
+# Regressionsnachweis zu SM-FMT-012 und SM-SEC-011. Ein später ergänztes,
+# gutgemeintes `**/fuzz/` schluckte ihn, und ohne diesen Fall schlüge kein Gate
+# an. Er braucht weder Qt noch Rust.
+d="$(make_repo fuzzmuster)"
+cp "$ROOT/.gitignore" "$d/.gitignore"
+mkdir -p "$d/crates/x/fuzz/corpus" "$d/crates/x/fuzz/artifacts"
+r=0
+git -C "$d" check-ignore -q crates/x/fuzz/corpus/ein_fund || r=1
+is "I12 fuzz/corpus ist gesperrt" "0" "$r"
+r=0
+git -C "$d" check-ignore -q crates/x/fuzz/artifacts/ein_absturz && r=1
+is "I12b fuzz/artifacts bleibt sichtbar" "0" "$r"
 
 # ── J · Markdown-Stil: fehlendes Werkzeug blockiert, es entfällt nicht ─────
 # S3 nach CLAUDE.md: Der Gegenstand — Markdown-Dateien — existiert immer, also gibt

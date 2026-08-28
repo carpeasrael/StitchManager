@@ -75,6 +75,14 @@ else
     echo "check-projektregeln: FAIL — scripts/lib/gestaltung.sh fehlt (SM-DES-003)" >&2
     exit 1
 fi
+# Dieselbe Erwägung für die Dateiliste: eine Antwort im Baum, nicht drei.
+if [ -r "$WURZEL/scripts/lib/dateien.sh" ]; then
+    # shellcheck source=lib/dateien.sh
+    . "$WURZEL/scripts/lib/dateien.sh"
+else
+    echo "check-projektregeln: FAIL — scripts/lib/dateien.sh fehlt (S3)" >&2
+    exit 1
+fi
 fehler=0
 entfallen=0
 melde()   { echo "  ✗ $*"; fehler=$((fehler + 1)); }
@@ -94,19 +102,65 @@ gestaltungsquelle_moeglich() { kn_quelltextart "$1"; }
 
 # Quelltextdateien beider Wege. Nicht nur `*.qml` — sonst prüfte das Skript
 # unter Weg B nichts und meldete trotzdem grün.
+# Die Dateiliste selbst kommt aus scripts/lib/dateien.sh — eine Antwort im
+# Baum, nicht drei (dieselbe Erwägung wie bei scripts/lib/gestaltung.sh).
+#
+# **Der S3-Vertrag wird ausgewertet, nicht verworfen.** Ohne Git-Arbeitsbaum
+# meldete eine weggeworfene Fehlerlage „Oberflächenschicht ohne
+# Quelltextdateien" — ENTFÄLLT statt FAIL, obwohl der Baum voll ist.
+# **Rückgabewert 2 heißt „Liste nicht bildbar".** `grep` gibt 1 zurück, wenn es
+# nichts findet — für den Aufrufer wären „keine Treffer" und „git-Fehler" sonst
+# nicht unterscheidbar, und der Vertrag der Bibliothek dort nicht auswertbar.
 quellen_unter() {  # $1 = Pfad
     [ -d "$1" ] || return 0
-    git -c core.quotePath=false ls-files --cached --others --exclude-standard \
-        -- "$1" 2>/dev/null \
-        | grep -E "\.($KN_PRUEF_EXT)$" | sort -u
+    local liste
+    liste="$(kn_dateien "$1")" || return 2
+    printf '%s\n' "$liste" | grep -E "\.($KN_PRUEF_EXT)$"
+    return 0
 }
+
+if ! kn_arbeitsbaum; then
+    echo "check-projektregeln: FAIL — kein Git-Arbeitsbaum, der Prüfbereich ist nicht bildbar." >&2
+    echo "  Ein nicht durchgeführter Test ist kein bestandener Test (S3)." >&2
+    echo "  Behebung: aus einem Klon heraus aufrufen, nicht aus einem entpackten Archiv." >&2
+    exit 1
+fi
+
+# **Einmal je Lauf, auf Skriptebene.** Die Liste wurde an zwei Stellen mit
+# demselben Argument erfragt, also zweimal `git ls-files` samt `grep`. Die
+# Zwischenspeicherung gehört hierher und nicht in die Funktion: Beide
+# Aufrufstellen liegen in Kommandoersetzungen und Prozessersetzungen, also in
+# Unterschalen — dort ginge jede Zuweisung verloren. Dieselbe Bauform wie die
+# Listen in `check-docs.sh`.
+_OBERFLAECHE_CACHE=""
+if [ -n "$OBERFLAECHE" ] && [ -d "$OBERFLAECHE" ]; then
+    _OBERFLAECHE_CACHE="$(quellen_unter "$OBERFLAECHE")" || {
+        echo "check-projektregeln: FAIL — die Dateiliste ist nicht bildbar (git-Fehler)." >&2
+        echo "  Ein nicht durchgeführter Test ist kein bestandener Test (S3)." >&2
+        exit 1
+    }
+fi
+oberflaechenquellen() { printf '%s\n' "$_OBERFLAECHE_CACHE"; }
+
+# Dieselbe Behandlung für den Abfragenpfad: Er wurde zweimal je Lauf erfragt,
+# und die Prozessersetzung verwarf dabei den Rückgabewert.
+_ABFRAGEN_CACHE=""
+if [ -n "$ABFRAGEN" ] && [ -d "$ABFRAGEN" ]; then
+    _ABFRAGEN_CACHE="$(quellen_unter "$ABFRAGEN")" || {
+        echo "check-projektregeln: FAIL — die Dateiliste ist nicht bildbar (git-Fehler)." >&2
+        echo "  Ein nicht durchgeführter Test ist kein bestandener Test (S3)." >&2
+        echo "  Behebung: aus einem Klon heraus aufrufen, nicht aus einem entpackten Archiv." >&2
+        exit 1
+    }
+fi
+abfragequellen() { printf '%s\n' "$_ABFRAGEN_CACHE"; }
 
 # ── 1 · D-05 / SM-DES-003 ────────────────────────────────────────────────────
 echo "Prüfung 1 — Gestaltungsliterale (D-05, SM-DES-003)"
 if [ -z "$OBERFLAECHE" ] || [ ! -d "$OBERFLAECHE" ]; then
     entfaellt "keine Oberflächenschicht im Baum"
 else
-    dateien="$(quellen_unter "$OBERFLAECHE")"
+    dateien="$(oberflaechenquellen)"
     if [ -z "$dateien" ]; then
         entfaellt "Oberflächenschicht ohne Quelltextdateien"
     else
@@ -244,7 +298,7 @@ else
                 treffer=1
             fi
         fi
-    done < <(quellen_unter "$OBERFLAECHE")
+    done < <(oberflaechenquellen)
     if [ "$treffer" = 0 ]; then
         gut "die Oberfläche kennt $DATENHALTUNG nicht${TREIBER:+ und keinen Datenbanktreiber}"
     fi
@@ -364,7 +418,7 @@ else
                 treffer=1
             fi
         fi
-    done < <(quellen_unter "$ABFRAGEN")
+    done < <(abfragequellen)
     [ "$treffer" = 0 ] && gut "keine Abfrage setzt einen Wert ohne Begründung ein"
 fi
 

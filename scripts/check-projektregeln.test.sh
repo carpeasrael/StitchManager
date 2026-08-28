@@ -9,19 +9,16 @@ set -u
 WURZEL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PRUEFER="$WURZEL/scripts/check-projektregeln.sh"
 
-# **`timeout` gehört auf macOS nicht zum Grundsystem.** Ohne diese Prüfung
-# liefert *jeder* Fall 127, der Selbsttest ist rot, Stufe 0b blockiert jeden
-# Commit — und die Ausgabe zeigt auf den Prüfling statt auf das fehlende
-# Werkzeug. Dieselbe Vorkehrung trifft scripts/check-hintergrund.sh (S1/S3).
-if command -v timeout >/dev/null 2>&1; then
-    ZEITGRENZE=timeout
-elif command -v gtimeout >/dev/null 2>&1; then
-    ZEITGRENZE=gtimeout
+# Zeitgrenze und ihre Begründung stehen **einmal** im Baum.
+if [ -r "$WURZEL/scripts/lib/pruefumgebung.sh" ]; then
+    # shellcheck source=lib/pruefumgebung.sh
+    . "$WURZEL/scripts/lib/pruefumgebung.sh"
 else
-    echo "Selbsttest Projektregeln: FAIL — weder 'timeout' noch 'gtimeout' vorhanden."
-    echo "  Unter macOS: brew install coreutils (liefert gtimeout)."
+    echo "Selbsttest Projektregeln: FAIL — scripts/lib/pruefumgebung.sh fehlt (S3)."
     exit 1
 fi
+kn_zeitgrenze "Selbsttest Projektregeln" || exit 1
+ZEITGRENZE="$KN_ZEITGRENZE"
 
 # Die Attrappenwerte, die der eigene Prüfer erkennen soll, entstehen aus
 # Variablen. Stünden sie literal in dieser Datei, meldete `check-docs.sh` sie
@@ -47,13 +44,22 @@ HEXWERT="${RAUTE}c8102e"; HEXKURZ="${RAUTE}fff"; HEXLANG="${RAUTE}c8102e80"
 TMPWURZEL="$(mktemp -d)"
 trap 'rm -rf "$TMPWURZEL"' EXIT
 
+# Die Prüfbäume dürfen keinen Elternbaum sehen: Läge `$TMPDIR` innerhalb eines
+# Git-Arbeitsbaums, fände `git rev-parse` ihn, und der Negativfall zum
+# fehlenden Arbeitsbaum schlüge ohne Sachgrund fehl.
+export GIT_CEILING_DIRECTORIES="$TMPWURZEL"
+
 bestanden=0
 fehlgeschlagen=0
 
 pruefe() {  # $1 = Name, $2 = erwarteter Rückgabewert, $3 = Verzeichnis, $4… = erwarteter Text
     local name="$1" erwartet="$2" d="$3"; shift 3
     local out rc
-    out="$(cd "$d" && "$ZEITGRENZE" 60 bash "$d/scripts/check-projektregeln.sh" 2>&1)"; rc=$?
+    # `PRUEFPFAD` erlaubt einem Fall, den Suchpfad zu verstellen — etwa um eine
+    # Attrappe vor das echte `git` zu setzen. `ZEITGRENZE` ist absolut aufgelöst
+    # und bleibt davon unberührt.
+    out="$(cd "$d" && PATH="${PRUEFPFAD:-$PATH}" "$ZEITGRENZE" 60 \
+             bash "$d/scripts/check-projektregeln.sh" 2>&1)"; rc=$?
     local ok=1
     [ "$rc" = "$erwartet" ] || ok=0
     for muster in "$@"; do
@@ -77,6 +83,10 @@ baue() {
     # Die gemeinsamen Designregeln gehören mit ins Prüfrepo — der Prüfling
     # bindet sie ein und meldet ohne sie FAIL.
     cp "$WURZEL/scripts/lib/gestaltung.sh" "$d/scripts/lib/gestaltung.sh"
+    # Die gemeinsame Dateiliste ebenso — der Prüfling bindet sie ein und bricht
+    # ohne sie ab (S3); jeder Fall meldete dann die fehlende Bibliothek statt
+    # der Sache, um die es ihm geht.
+    cp "$WURZEL/scripts/lib/dateien.sh" "$d/scripts/lib/dateien.sh"
     ( cd "$d" && git init -q . && git config user.email t@t && git config user.name t )
 
     cat > "$d/.projektregeln.conf" <<'CONF'
@@ -535,6 +545,57 @@ printf 'w.%s(kn.s2)\n' "$SETSP" > "$d/crates/ui/leiste.py"
 git -C "$d" add -A >/dev/null 2>&1
 pruefe "U5b Weg B: Bezeichner in der Methodenform besteht" 0 "$d" \
     "keine Literale außerhalb der Gestaltungsquelle"
+
+# ── V · Die beiden fail-closed-Zweige aus scripts/lib/dateien.sh ────────────
+#
+# Beide Zweige kamen mit der gemeinsamen Dateiliste hinzu und hatten keinen
+# Negativfall. Ein Rückfall auf `|| true` ließe dieses Pflicht-Gate grün über
+# eine leere Dateimenge melden, ohne dass ein Fall anschlägt — genau die
+# Degradation zum No-Op, die der Kopf dieser Datei ausschließt.
+d="$(baue)"
+rm -f "$d/scripts/lib/dateien.sh"
+git -C "$d" add -A >/dev/null 2>&1
+pruefe "V1 fehlende Dateilisten-Bibliothek blockiert" 1 "$d" \
+    "dateien.sh fehlt"
+
+d="$(baue)"
+rm -rf "$d/.git"
+pruefe "V2 kein Git-Arbeitsbaum blockiert, statt leer grün zu melden" 1 "$d" \
+    "kein Git-Arbeitsbaum" "kein bestandener Test"
+
+# V3/V4 — die Zusage der Bibliothek gilt für **jeden** git-Fehler, nicht nur
+# für „kein Arbeitsbaum". Ohne diese Fälle bliebe unbemerkt, wenn ein Aufrufer
+# den Rückgabewert wieder verwürfe: Der Prüfer meldete dann drei grüne Zusagen
+# über eine nie gesehene Menge.
+d="$(baue)"
+mkdir -p "$d/attrappe"
+cat > "$d/attrappe/git" <<'ATTRAPPE'
+#!/bin/sh
+# rev-parse gelingt und antwortet wie das echte git; ls-files bricht ab — die
+# Lage eines beschädigten Index. Ein rev-parse ohne Antwort wäre etwas anderes:
+# Der Prüfling leitete daraus eine leere Wurzel ab und scheiterte an den
+# Bibliothekspfaden statt an der Dateiliste.
+for a in "$@"; do
+  case "$a" in
+    --show-toplevel)       pwd; exit 0 ;;
+    --is-inside-work-tree) echo true; exit 0 ;;
+    ls-files)              exit 128 ;;
+  esac
+done
+exit 0
+ATTRAPPE
+chmod +x "$d/attrappe/git"
+PRUEFPFAD="$d/attrappe:$PATH" \
+pruefe "V3 abgebrochenes git ls-files blockiert, statt leer grün zu melden" 1 "$d" \
+    "nicht bildbar"
+unset PRUEFPFAD
+
+# Und die Gegenprobe: Ein leerer, aber lesbarer Baum ist kein Fehler.
+d="$(baue)"
+rm -rf "$d/crates"
+git -C "$d" add -A >/dev/null 2>&1
+pruefe "V4 leerer Oberflächenpfad ergibt ENTFÄLLT, nicht FAIL" 3 "$d" \
+    "keine Oberflächenschicht im Baum"
 
 echo
 echo "Selbsttest Projektregeln: $bestanden bestanden, $fehlgeschlagen fehlgeschlagen"

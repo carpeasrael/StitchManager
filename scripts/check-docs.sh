@@ -39,9 +39,9 @@ skip()    { printf '  – %s\n' "$*"; SKIPPED=$((SKIPPED + 1)); SKIPNAMES="$SKIP
 
 # Arbeitsbaum, nicht nur der Index — und ohne die maschinell erzeugten Gate-Protokolle:
 # sie betten den Rundendiff wörtlich ein und trügen dessen Farbwerte und Kennungen hierher.
-# core.quotePath=false: sonst liefert git Nicht-ASCII-Pfade escapt ("a/\303\234b.md")
-# und jede Datei mit Umlaut fiele lautlos aus der Prüfung.
-tracked_and_new() { git -c core.quotePath=false ls-files --cached --others --exclude-standard "$@" 2>/dev/null | sort -u; }
+# Die Frage „welche Dateien gehören zum Baum?" wird **einmal** beantwortet, in
+# scripts/lib/dateien.sh — samt der Vorkehrung gegen escapte Nicht-ASCII-Pfade.
+tracked_and_new() { kn_dateien "$@"; }
 # Die Regeln zu SM-DES-003/D-05 stehen **einmal** im Baum. Fehlt die Datei,
 # ist das FAIL, nicht ENTFÄLLT: Ihr Gegenstand — Markdown und Quelltext —
 # liegt immer vor (S3). Sie muss **vor** den Dateilisten eingebunden sein: Der
@@ -51,6 +51,14 @@ if [ -r "$ROOT/scripts/lib/gestaltung.sh" ]; then
   . "$ROOT/scripts/lib/gestaltung.sh"
 else
   echo "  ✗ scripts/lib/gestaltung.sh fehlt — die Designregeln sind nicht prüfbar (SM-DES-003)" >&2
+  exit 1
+fi
+# Dieselbe Erwägung für die Dateiliste: eine Antwort im Baum, nicht drei.
+if [ -r "$ROOT/scripts/lib/dateien.sh" ]; then
+  # shellcheck source=lib/dateien.sh
+  . "$ROOT/scripts/lib/dateien.sh"
+else
+  echo "  ✗ scripts/lib/dateien.sh fehlt — der Prüfbereich ist nicht bildbar (S3)" >&2
   exit 1
 fi
 
@@ -65,7 +73,27 @@ fi
 #
 # Die Listen entstehen deshalb hier, vor der ersten Nutzung. Die Funktionen
 # geben sie nur noch aus.
-_DOCS_CACHE="$(tracked_and_new '*.md' | grep -vE '^Reviews/' || true)"
+# **Der S3-Vertrag der Bibliothek wird ausgewertet, nicht verworfen.**
+# `kn_dateien` meldet Rückgabewert 1, wenn kein Git-Arbeitsbaum vorliegt (etwa
+# in einem entpackten Archiv). Ein `|| true` machte daraus eine leere Liste —
+# und die Prüfung meldete grün über eine Menge, die sie nie gesehen hat.
+if ! kn_arbeitsbaum; then
+  echo "  ✗ Kein Git-Arbeitsbaum — der Prüfbereich ist nicht bildbar." >&2
+  echo "    Ein nicht durchgeführter Test ist kein bestandener Test (S3)." >&2
+  echo "    Behebung: aus einem Klon heraus aufrufen, nicht aus einem entpackten Archiv." >&2
+  exit 1
+fi
+
+# **Der Rückgabewert wird vor dem Filtern ausgewertet.** In einer Pipeline mit
+# `|| true` ginge er verloren, und ein git-Fehler — beschädigter Index,
+# unlesbare `.gitignore` — ergäbe eine leere Liste bei grünem Ergebnis: eine
+# Zusage über eine nie gesehene Menge (S3).
+_ROH_DOCS="$(tracked_and_new '*.md')" || {
+  echo "  ✗ Die Dateiliste ist nicht bildbar (git-Fehler)." >&2
+  echo "    Ein nicht durchgeführter Test ist kein bestandener Test (S3)." >&2
+  exit 1
+}
+_DOCS_CACHE="$(printf '%s\n' "$_ROH_DOCS" | grep -vE '^Reviews/' || true)"
 
 # Der Prüfbereich der Quelltexte kommt aus `KN_PRUEF_EXT` (die
 # gestaltungstragenden Oberflächenarten beider Wege plus Rust) und wird um die
@@ -75,7 +103,12 @@ _SRC_MUSTER=()
 for _e in $(printf '%s' "$KN_PRUEF_EXT" | tr '|' ' ') sh html; do
   _SRC_MUSTER+=("*.$_e")
 done
-_SOURCES_CACHE="$(tracked_and_new "${_SRC_MUSTER[@]}" | grep -vE '^Reviews/' || true)"
+_ROH_SRC="$(tracked_and_new "${_SRC_MUSTER[@]}")" || {
+  echo "  ✗ Die Dateiliste der Quelltexte ist nicht bildbar (git-Fehler)." >&2
+  echo "    Ein nicht durchgeführter Test ist kein bestandener Test (S3)." >&2
+  exit 1
+}
+_SOURCES_CACHE="$(printf '%s\n' "$_ROH_SRC" | grep -vE '^Reviews/' || true)"
 _ALLE_CACHE="$(printf '%s\n%s\n' "$_DOCS_CACHE" "$_SOURCES_CACHE" | grep . | sort -u)"
 
 docs()         { printf '%s\n' "$_DOCS_CACHE"; }
@@ -308,7 +341,11 @@ elif command -v markdownlint-cli2 >/dev/null 2>&1; then
   MDL="markdownlint-cli2"
 fi
 if [ -n "$MDL" ]; then
-  if mdout="$("$MDL" "**/*.md" "!Reviews/**" 2>&1)"; then
+  # **Der Prüfbereich steht in `.markdownlint-cli2.jsonc` (`globs`), nicht hier.**
+  # Er lag zuvor in vier Fassungen im Baum — Konfigurationsdatei, `package.json`,
+  # dieses Skript und CLAUDE.md. Vier Antworten auf dieselbe Frage laufen
+  # auseinander (CLAUDE.md Abschnitt 11).
+  if mdout="$("$MDL" 2>&1)"; then
     pass "Markdown-Stil ($MDL)"
   else
     # markdownlint-cli2 schreibt die Befunde nach stderr im Format datei:zeile:spalte …

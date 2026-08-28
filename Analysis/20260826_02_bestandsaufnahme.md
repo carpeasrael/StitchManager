@@ -388,6 +388,15 @@ npm-Abhängigkeitskette im Baum, die sie prüfenden Gates aber noch nicht — `s
 `integrity`-Bindung jedes Eintrags. Es fehlt im Zwischenstand die *Prüfung*, nicht die
 *Maßnahme*; mit 1b ist auch sie da.
 
+**Ein Punkt der Checkliste ist bei Satz 1a unterblieben, und das steht hier statt es zu
+glätten:** Der Commit `3ef4b28` trägt **keinen** `Gate-Report:`-Trailer. Die Bindung an sein
+Protokoll besteht nur in einer Richtung — der post-commit-Hook hat die Commit-Kennung im
+Protokoll nachgetragen, der Rückverweis vom Commit auf Protokollpfad und Prüfsumme fehlt.
+Nachträglich lässt er sich nicht setzen: Ein `--amend` änderte die Commit-Kennung, auf die das
+Protokoll bereits zeigt, und ein nachträglich geändertes Protokoll ist nach Abschnitt 13
+ausdrücklich ausgeschlossen („eine Schleife ohne Ende"). Ab Satz 1b wird der Trailer gesetzt;
+das grüne Protokoll von 1a wird dort mitcommittet.
+
 **Satz 1 ist nach acht Runden noch einmal geteilt worden.** Die Befunde wurden von Runde zu
 Runde kleiner, aber ein wesentlicher Teil entstand daran, dass eine Korrektur Kommentare und
 Nachweistexte hinterließ, die den Code nicht mehr trafen — bei 222 KB Änderungssatz wächst diese

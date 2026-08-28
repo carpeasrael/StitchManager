@@ -82,20 +82,23 @@ Das Commit-Freigabe-Gate ist gebaut und läuft; seit dem Quellbaum kommen die
 Rust-Befehle hinzu:
 
 ```bash
-npm ci                                   # Markdown-Linter holen — einmalig je Klon
+npm ci                                   # Markdown-Linter holen — einmalig je Klon (node >= 22)
 bash scripts/install-hooks.sh            # Hooks installieren — einmalig je Klon
 bash scripts/install-hooks.sh --status   # Zustand anzeigen
 bash scripts/install-hooks.sh --uninstall
 
 bash scripts/review-gate.sh              # Gate von Hand, commit-Tier
 REVIEW_GATE_TIER=push bash scripts/review-gate.sh
-bash scripts/review-gate.test.sh         # Selbsttest, Stufe 0b (40 s, 137 Fälle)
-bash scripts/check-docs.sh               # Dokumentprüfungen, Stufe 0c (1 s)
+bash scripts/review-gate.test.sh         # Selbsttest, Stufe 0b (47 s, 155 Fälle)
+bash scripts/check-docs.sh               # Dokumentprüfungen, Stufe 0c (2 s)
 npm run lint:md                          # nur der Markdown-Stil, Teil von check-docs.sh
 bash scripts/check-plan.sh               # Konsistenz des Implementierungsplans, Stufe 0c
 bash scripts/check-plan.test.sh          # dessen Selbsttest, Stufe 0b (1 s, 26 Fälle)
 bash scripts/check-projektregeln.sh      # Projektregeln am Quellbaum, Stufe 0c (< 1 s)
-bash scripts/check-projektregeln.test.sh # dessen Selbsttest, Stufe 0b (12 s, 57 Fälle)
+bash scripts/check-projektregeln.test.sh # dessen Selbsttest, Stufe 0b (13 s, 61 Fälle)
+bash scripts/check-qml.sh                # QML: qmllint und qmlformat, Stufe 0c (< 1 s)
+bash scripts/check-qml.test.sh           # dessen Selbsttest, Stufe 0b (5 s, 26 Fälle)
+#                                          ohne Qt: 5 davon geprüft, 21 entfallen
 bash scripts/check-hintergrund.sh        # Messwerkzeug, NICHT im Gate (~40 s)
 ```
 
@@ -103,14 +106,38 @@ bash scripts/check-hintergrund.sh        # Messwerkzeug, NICHT im Gate (~40 s)
 Lastenhefts: Messung statt Einschätzung), und zwar auf Apple Silicon mit warmem Dateisystem-
 zwischenspeicher. Sie sind **Regressionsschwellen, keine Zusagen**: Solange OP-08 kein
 Referenzgerät benennt, gibt es keine Grundlage für eine Zusage. Ein vollständiger Trockenlauf
-über die Stufen 0 bis 0c braucht rund **47 s** — den Hauptteil tragen die drei Selbsttests
-der Stufe 0b, nicht die Dokumentprüfung. Die Einzelwerte oben sind je für sich gemessen und
-addieren sich **nicht** zum Gesamtwert: Im Trockenlauf laufen sie nacheinander gegen einen
-warmen Dateisystemzwischenspeicher.
+über die Stufen 0 bis 0c braucht rund **71 s** — den Hauptteil tragen die vier Selbsttests
+der Stufe 0b, nicht die Dokumentprüfung.
 
-**Die Werte sind am gelieferten Stand gemessen, nicht fortgeschrieben.** Der Werkzeug-Satz
-vom 26.08.2026 hat den Selbsttestumfang von 82 auf 137 Fälle erhöht und zwei weitere
-0b-Stufen aufgenommen; die vorherigen Klammerwerte trugen für diesen Stand nicht mehr.
+**Der Gesamtwert ist aus den Einzelwerten nicht errechenbar, in keiner Richtung.** Zwei
+Einflüsse wirken gegeneinander. Von Hand aufgerufen fährt `review-gate.test.sh` in seinen
+Prüfrepos vollständige Gates, und die führen dort die Selbsttests der Schwesterprüfer mit;
+**innerhalb** eines Gates läuft er dagegen mit `GATE_SELFTEST_ACTIVE=1`, und die
+geschachtelten Gates melden ihre 0b-Stufen als ENTFÄLLT („läuft bereits innerhalb des
+Selbsttests") — dort ist er also billiger als allein gemessen. Umgekehrt enthält der
+Trockenlauf mehr als die vier Selbsttests: Stufe 0 mit Secret-Scan und Vorfiltern, dazu in
+Stufe 0c die Dokument-, Plan-, Projektregel- und QML-Prüfung, bei vorhandenem `Cargo.toml`
+zusätzlich `fmt`, `clippy`, `deny` und die änderungsbezogene Testauswahl. Welcher Einfluss
+überwiegt, hat zwischen zwei Messdurchgängen bereits das Vorzeichen gewechselt. **Die
+Einzelwerte sind Schwellen für den Einzelaufruf, der Gesamtwert eine Schwelle für den
+Trockenlauf** — eine Abweichung des einen ist am anderen nicht zu prüfen.
+
+**Die Werte sind am gelieferten Stand gemessen, nicht fortgeschrieben.** Zwei Werkzeug-Sätze
+vom 26.08.2026 haben den Selbsttestumfang von 82 über 137 auf den in der Befehlsliste oben
+genannten Stand erhöht und insgesamt **drei** weitere 0b-Stufen aufgenommen, zuletzt die
+QML-Prüfung; die vorherigen Klammerwerte trugen für diesen Stand nicht mehr. **Die Fallzahlen
+stehen nur in der Befehlsliste oben** — eine zweite Nennung hier altert bei der nächsten
+Ergänzung, und genau das ist bereits eingetreten.
+
+**Alle Werte oben stammen aus einem einzigen Messdurchgang**, damit sie untereinander
+vergleichbar bleiben. Der Werkzeugsatz kostet Laufzeit — ein A/B-Vergleich beider Fassungen
+unter **denselben** Bedingungen ergab für den Projektregel-Selbsttest rund 15 % Zuwachs für die
+gemeinsame Dateiliste. Ein zweiter, größerer Teil beobachteter Schwankungen geht auf Fremdlast
+des Messgeräts: Dieselben Skripte lieferten bei einem Einminuten-Lastmittel
+(`uptime`, erster Wert) oberhalb von 4 durchweg anderthalbfache Werte. Solange OP-08 kein
+Referenzgerät benennt, lässt sich beides nicht sauber
+trennen; die Werte sind deshalb als **obere Schranken** zu lesen, und ein Regressionsverdacht
+ist erst dann einer, wenn er sich in einem A/B-Vergleich unter gleichen Bedingungen zeigt.
 
 Stellschrauben (Vorgabewerte in Klammern): `AGENT_TIMEOUT` (900) · `DIFF_CAP_BYTES` (400000) ·
 `BINARY_MAX_BYTES` (2000000) · `GATE_REVIEWERS` (newton turing tesla curie) ·
@@ -400,13 +427,15 @@ ENTFÄLLT:** Markdown-Dateien liegen immer im Baum, der Gegenstand der Prüfung 
 
 | Prüfung | Werkzeug / Befehl | Prüft |
 |---|---|---|
-| Markdown-Stil | `npm run lint:md` — ruft `markdownlint-cli2 "**/*.md" "!Reviews/**"` mit `.markdownlint-cli2.jsonc` auf; Fassung gebunden in `package.json` | Überschriftenfolge, Tabellensyntax, Zeilenlänge, Sprachangabe an Codeblöcken |
+| Markdown-Stil | `npm run lint:md` — ruft `markdownlint-cli2` auf; **Prüfbereich und Regeln stehen beide in `.markdownlint-cli2.jsonc`** (`globs`), damit dieselbe Frage nicht in vier Fassungen im Baum liegt. Fassung gebunden in `package.json` | Überschriftenfolge, Tabellensyntax, Zeilenlänge, Sprachangabe an Codeblöcken |
 | Tote Anforderungsverweise | `SM-[A-Z]{3}-[0-9]{3}` über die Prüfbereiche gegen die Kennungen des Lastenhefts | Jede referenzierte Kennung existiert; gestrichene sind als `~~…~~` markiert und dürfen referenziert werden |
 | Kennungs-Wiederverwendung | Doppelte **Definitionen** (erste Tabellenspalte) in URS-STM-001 | Kennungen werden nie neu vergeben. Mehrfache *Erwähnung* ist erlaubt und kein Befund |
 | Versionsabgleich | Kopfzeilen „Mitgeltend" gegen die tatsächlichen Dokumentversionen im Endzustand des Commits | Die drei Dokumente verweisen auf den Stand, gegen den sie abgestimmt wurden |
 | Zweitregister | `OP-[0-9]` in `Design/` und `TechStack/` | DES/TEC verweisen nur, führen keine eigene Nummerierung |
 | Gestaltungsliterale | Regeln und Muster stehen **einmal** im Baum, in `scripts/lib/gestaltung.sh`; `check-docs.sh` und `check-projektregeln.sh` binden dieselbe Datei ein. Erfasst sind Farbe (Hex drei-, sechs- und achtstellig, benannte Farben, `rgb()`/`Qt.rgba()`/`darker()`), Schrift, Maß, Abstand, Schriftgrad, Zeilenhöhe, Strichstärke und Bewegungsdauer — bei Zuweisung mit `:` oder `=`, in eigenen `property`-Deklarationen mit gestaltungsnahem Namen und in der Methodenform (`setSpacing(8)`, Weg B). **Umfang:** Die Farbklasse gilt baumweit, die übrigen Klassen nur unterhalb des in `.projektregeln.conf` benannten `oberflaeche`-Pfads — D-05 gilt dem Komponentencode, nicht dem Kern und nicht der Prosa. In `*.md` ist `#` gefolgt von reinen Ziffern (Vorgangsbezug) oder ohne Zuweisung kein Farbwert. Das Mockup ist **dateiweit** ausgenommen, weil Inhalts- und Themenfarben dort nicht getrennt sind (Restrisiko in `Analysis/20260823_01_gate-befunde-rueckstand.md`). Ausnahme je Zeile: `D-05-Ausnahme: <Grund>` — **mit** Begründung, eine nackte Markierung zählt nicht | Vorwegnahme von D-05 |
 | Lizenzen und Herkunft der npm-Kette | `scripts/lib/lizenzen.py`, aufgerufen aus `scripts/check-docs.sh`; Positivliste in `.lizenzen.conf` | Jede Lizenz steht auf der Positivliste (SPDX-Ausdrücke werden zerlegt: bei `OR` genügt eine zulässige Alternative, bei `AND` müssen alle zulässig sein, `WITH` bindet an die Lizenz davor). Jeder Eintrag nennt `resolved` auf `registry.npmjs.org` und eine `integrity`-Prüfsumme (SM-OSS-011). `lockfileVersion` muss 2 oder 3 sein — Fassung 1 führt die Pakete anderswo und wäre still ungeprüft. Erweitert wird die Liste durch einen **begründeten** Eintrag, nie durch Lockern der Prüfung; eine begründete Herkunfts-Ausnahme lautet `herkunft <paket>  # <Grund>` |
+| Dateiliste des Prüfbereichs | `scripts/lib/dateien.sh`, eingebunden von `check-docs.sh`, `check-projektregeln.sh` und `check-qml.sh` | Die Frage „welche Dateien gehören zum Baum?" wird **einmal** beantwortet: Arbeitsbaum über `git ls-files --cached --others --exclude-standard` (achtet damit `.gitignore`), `core.quotePath=false` gegen escapte Nicht-ASCII-Pfade (SM-NFR-010), `sort -u` gegen Doppelnennungen. **Rückgabewert 1 ohne Git-Arbeitsbaum und bei jedem anderen git-Fehler**, und jeder Aufrufer wertet ihn aus: Eine weggeworfene Fehlerlage ergäbe eine leere Liste, und die meldete ENTFÄLLT oder grün über eine ungeprüfte Menge — genau die Verwechslung, die S3 ausschließt. Aufrufer, die zwischen „keine Treffer" und „Liste nicht bildbar" unterscheiden müssen, melden ihrerseits **2**: `grep` gibt für „nichts gefunden" ebenfalls 1 zurück, beides wäre sonst nicht auseinanderzuhalten |
+| Umgebungsprüfungen der Selbsttests | `scripts/lib/pruefumgebung.sh`, eingebunden von `check-qml.test.sh`, `check-projektregeln.test.sh` und `check-hintergrund.sh` | `kn_zeitgrenze` löst `timeout` bzw. `gtimeout` **absolut** auf — einzelne Prüffälle verstellen den Suchpfad, ein relativer Aufruf liefe dort ins Leere. Fehlt beides, ist das FAIL mit Bezugsweg, nie ENTFÄLLT: Ohne Zeitgrenze lieferte jeder Prüffall 127, und die Ausgabe zeigte auf den Prüfling statt auf das fehlende Werkzeug (S1/S3). Fehlt die Bibliothek selbst, blockiert der Selbsttest ebenso |
 | Konsistenz des Implementierungsplans | `scripts/check-plan.sh` (Selbsttest: `--selftest`) | Umfang gegen Zurückstellung · Arbeitspaket gegen Matrix · Zuordnung gegen Mitwirkung · Zählwerte gegen Matrix und Lastenheft · Prüffälle gegen Schema und Matrix · **Unterfallmenge aus Abschnitt 6.1 gegen die Matrix** · Zeilenlänge im Fließtext · offene Punkte definiert und im Entscheidungsgatter · ausgeschriebene Zahlwörter · Auszeichnungsschäden je Absatz, einschließlich stehen gebliebener Artikel · Befundtabelle je beschriebener Prüfrunde · **Zählwerte der `README.md` gegen Lastenheft und Plan**. Die Aufzählung trägt bewusst **keine** Anzahl — eine mitgezählte Zahl altert bei der nächsten Bedingung. Fehlt der Plan, meldet die Prüfung **ENTFÄLLT** (Exit 3), nie PASS |
 
 ### Quellcode — seit dem Quellbaum verbindlich
@@ -417,10 +446,24 @@ ENTFÄLLT:** Markdown-Dateien liegen immer im Baum, der Gegenstand der Prüfung 
 | Rust-Lint | `cargo clippy --all-targets --all-features -- -D warnings` | Warnungen sind Fehler |
 | Lizenzen | `cargo deny check licenses bans sources` | Positivliste; ein Fremdpaket lässt den Bau scheitern (SM-OSS-009, AK-11) |
 | Tests | `cargo test --all` · Einzeltest: `cargo test <name> -- --exact --nocapture` | |
-| Fuzzing | `cargo fuzz run <ziel>` | Je Formatparser ein Ziel, dauerhaft (SM-SEC-011, SM-FMT-012) |
-| QML (Weg A) | `qmllint`, `qmlformat -n` | Nur falls cxx-qt gewählt wird |
+| Fuzzing | Aus dem Kistenverzeichnis: `cargo fuzz run <ziel> fuzz/corpus/<ziel> fuzz-saat/<ziel>` · `cargo fuzz coverage <ziel>` | Je Formatparser ein Ziel, dauerhaft (SM-SEC-011, SM-FMT-012). `fuzz/target/`, `fuzz/corpus/` und `fuzz/coverage/` sind erzeugt und gesperrt. Ein **versioniertes** Saatkorpus — etwa ein Absturzfund als Regressionsnachweis — liegt unter `crates/<kiste>/fuzz-saat/<ziel>/` mit Herkunftsangabe. **Die Reihenfolge der Korpuspfade ist nicht beliebig:** libFuzzer schreibt neue Eingaben in das **erste** genannte Verzeichnis; stünde der Saatpfad vorn, füllte der Lauf ihn mit erzeugtem Korpus in einem nicht gesperrten Pfad. `fuzz/artifacts/` bleibt sichtbar — dort landet der Fund; nach der Auswertung wandert er nach `fuzz-saat/<ziel>/`, der Rest wird entfernt |
+| QML (Weg A) | `scripts/check-qml.sh` (Stufe 0c), Selbsttest `scripts/check-qml.test.sh` (Stufe 0b) | `qmllint` und `qmlformat` über **jede** `*.qml` im Baum — die Dateiliste kommt aus `git ls-files --cached --others --exclude-standard`, achtet damit `.gitignore` und braucht keine Zuordnung aus `.projektregeln.conf`. Gegenstand ist der Baum, nicht die Oberflächenschicht: Eine QML-Datei daneben bliebe sonst ungeprüft, während das Gate PASS meldet. **`qmlformat` läuft ohne `-n`**, siehe den Absatz darunter. **Keine Prüfart ist abgeschaltet**: Die einzige Ausnahme ist ein Musterfilter für die cxx-qt-Brücke — Meldungen mit doppeltem Doppelpunkt (C++-Geltungsbereich, in QML kein gültiger Typname) und die aus `plugin.qmltypes` **abgeleiteten** Brückentypnamen. Ein echter Befund derselben Arten blockiert weiter: eine fehlende Importzeile ebenso wie ein wirklich unauflösbarer Eigenschaftstyp. Enge **und** Wirkung sind im Selbsttest in beide Richtungen belegt; die Fallnamen stehen dort, nicht hier. Ein stiller Abbruch eines der beiden Werkzeuge ist FAIL, nie PASS. Kein `*.qml` im Baum: ENTFÄLLT (S3) |
 | Python (Weg B) | `ruff check` · `ruff format --check` · `mypy` | Nur falls PySide6 gewählt wird |
 | Projektregeln | `scripts/check-projektregeln.sh` (Stufe 0c), Selbsttest `scripts/check-projektregeln.test.sh` (Stufe 0b) | **Fünf** Regeln: D-05/SM-DES-003 (kein Gestaltungsliteral außerhalb der Gestaltungsquelle, Umfang siehe Zeile Gestaltungsliterale), SM-SEC-004 (die Oberfläche kennt weder die Datenhaltung noch einen Datenbanktreiber — beide Namenslisten stehen in `.projektregeln.conf`), SM-SEC-005 (kein Wert im Abfragetext; begründungspflichtig ist auch ein Abfragetext aus einer Variablen, Ausnahme `SM-SEC-005-Ausnahme: <Grund>` in derselben oder der unmittelbar vorangehenden Kommentarzeile), SM-OSS-011 (`.npmrc` führt `ignore-scripts=true` und **keine** weitere Direktive — eine Umleitung der Bezugsquelle oder ein Zugangstoken wäre sonst nicht zu sehen), SM-PLT-007 (Versionsgleichheit) |
+
+**Warum `qmlformat` ohne `-n` läuft.** Der Schalter *normalize* sortiert die Eigenschaften
+eines Objekts alphabetisch. Auf `crates/ui/qml/Gestaltung.qml` angewandt zerreißt er die
+Gliederung nach den Abschnitten von DES-STM-001 — Farben nach 3.1 und 3.2, Grundraster nach 5 —
+und löst jeden Begründungskommentar von dem Wert, zu dem er gehört. Die Gestaltungsquelle
+verlöre damit genau die Nachvollziehbarkeit gegen das Gestaltungsdokument, um derentwillen
+SM-DES-003 sie zu **einer** Datei macht. Ohne den Schalter vereinheitlicht `qmlformat`
+Einrückung, Leerraum und Strichpunkte — und das ist es, was die Regel „Formatierung wird nicht
+im Review diskutiert" meint. Diese Datei nannte bis zum 26.08.2026 `qmlformat -n`; der
+Widerspruch wurde nach S1 gemeldet statt ausgelegt und vom Auftraggeber zugunsten der
+Gliederung entschieden (`Analysis/20260826_02_bestandsaufnahme.md`). Der Selbsttest hält beide
+Hälften fest — dass eine abweichende Einrückung blockiert und dass die **Reihenfolge** der
+Eigenschaften kein Befund ist. Die Fallnamen stehen dort, nicht hier: Eine Umbenennung
+hinterließe sonst einen toten Verweis in dieser Datei.
 
 Diese Zeile ergänzt Abschnitt 12: Sobald ein Rust-Projekt existiert, gehören zusätzlich
 CycloneDX-Stückliste je Veröffentlichung und CodeQL in die Kette (TEC-STM-001 Abschnitt 4
@@ -438,7 +481,13 @@ SM-LIB-009, SM-NFR-001 und AK-01 nennen 100.000 Einträge. Ein Lauf mit
 aus und sein Ergebnis ist keine Abnahme. **SM-NFR-004** (fünf Sekunden bis bedienbereit bei
 100.000) erfasst es nicht — dafür fehlt bis heute ein Nachweis. Anwendbarkeit: Rückgabewert 3
 (ENTFÄLLT), solange keine Oberfläche im Baum ist; sonst PASS/FAIL. Seine Pfade liest es aus
-`.projektregeln.conf`, nicht aus dem Skript.
+`.messwerkzeug.conf`, hilfsweise aus `.projektregeln.conf` — nicht aus dem Skript.
+
+**Vier Ausgänge, nicht zwei.** Neben ENTFÄLLT (3), PASS (0) und FAIL (1) kennt das Werkzeug
+**4 = Kurzprüfung**: ein Lauf mit `SM_PRUEFBESTAND_ANZAHL` unterhalb der Bezugsmenge. Genau
+diese Unterscheidung entscheidet, ob ein Ergebnis in die Rückverfolgbarkeitsmatrix darf — eine
+Kurzprüfung ist keine Abnahme. Wer die Regel liest und nur zwei Ausgänge kennt, trüge sie
+gleichwohl ein.
 
 **Wie die Projektregelprüfung technologiefrei bleibt.** Die Wegwahl ist im führenden Register
 noch nicht fortgeschrieben (Abschnitt 1), und Kapitel 3 des Plans hält fest, die Modulnamen
@@ -510,10 +559,16 @@ der Stufe 0c und `scripts/check-plan.sh` deren Teil für den Implementierungspla
 Selbsttest `scripts/check-plan.test.sh` läuft in Stufe 0b mit. `scripts/check-projektregeln.sh`
 prüft die Projektregeln am Quellbaum (Abschnitt 11) und entfällt mit Rückgabewert 3, solange
 es keinen gibt; sein Selbsttest `scripts/check-projektregeln.test.sh` läuft ebenfalls in
-Stufe 0b mit. **Rückgabewert 3 heißt ENTFÄLLT und steht so im Protokoll, nie als PASS.** Alle
-Skripte gehen in die
-Gate-Signatur ein — eine geänderte Prüflogik gibt kein altes Ergebnis aus dem Cache
-zurück. Die Protokolle landen unter `Reviews/`.
+Stufe 0b mit. `scripts/check-qml.sh` prüft die Oberflächenschicht mit `qmllint` und
+`qmlformat` und entfällt ebenso, solange kein `*.qml` im Baum liegt; sein Selbsttest
+`scripts/check-qml.test.sh` läuft in Stufe 0b mit. In Stufe 0c steht es **nach** `cargo
+clippy`, aber **außerhalb** von dessen `Cargo.toml`-Bedingung: `qmllint` braucht das von
+cxx-qt erzeugte `plugin.qmltypes`, das der Bauschritt von clippy erzeugt — sein Gegenstand
+ist aber `*.qml`, nicht ein Rust-Projekt. Unter Weg B läge QML ohne `Cargo.toml` im Baum, und
+das Gate erschiene im Protokoll weder als PASS noch als ENTFÄLLT.
+**Rückgabewert 3 heißt ENTFÄLLT und steht so im Protokoll, nie als PASS.** Alle
+Skripte gehen in die Gate-Signatur ein — eine geänderte Prüflogik gibt kein altes
+Ergebnis aus dem Cache zurück. Die Protokolle landen unter `Reviews/`.
 
 **Geltungsbereich — ehrlich, nicht suggestiv.** Ein Git-Hook ist client-seitig, wird je Klon
 von Hand installiert und hat dokumentierte Ausstiege. Die Protokolle unter `Reviews/` sind
@@ -921,9 +976,23 @@ Beobachtungen aus allen Stufen werden dokumentiert. Je Befund:
 blocker- und major-Befunde eines nicht committeten roten Protokolls werden in tabellarischer
 Kurzform in das zugehörige `Analysis/`-Dokument übernommen; minor-Befunde werden je Runde
 gezählt und zusammengefasst. Die Übernahme nennt **Ort, Kennung, Schweregrad und Status — nie
-den beanstandeten Wert selbst**; sonst trüge das Analysedokument genau den Inhalt, dessentwegen
-der Befund entstand, in einen Prüfbereich hinein. Ohne diese Regel stünden die
-Dokumentationspflicht dieses Abschnitts und das Commit-Verbot gegeneinander (S1).
+den beanstandeten Wert selbst**; sonst trüge das Analysedokument genau
+den Inhalt, dessentwegen der Befund entstand, in einen Prüfbereich hinein. Ohne diese Regel
+stünden die Dokumentationspflicht dieses Abschnitts und das Commit-Verbot gegeneinander (S1).
+
+**Und sie nennt keine Votumsbilanz.** Weder „2/4" noch „X und Y haben zugestimmt" gehören in
+die Übernahme. Grund: Das Analysedokument liegt im Reviewer-Diff der **nächsten** Runde. Jeder
+Reviewer erführe daraus, wer zuletzt wie gestimmt hat — und Abschnitt 14 stellt Stufe 1
+ausdrücklich unabhängig („ohne Kenntnis der jeweils anderen Bewertungen").
+
+**Deshalb trägt ein blocker- oder major-Befund in der Übernahme keinen Agentennamen.** Nach
+Stufe 1 stimmt ein Reviewer mit mindestens einem solchen Befund zwingend CHANGES_REQUESTED;
+„major (X)" ist damit dieselbe Angabe wie „X hat blockiert", nur anders geschrieben. Die
+Zuordnung bleibt bei **minor-Befunden und Beobachtungen**, wo sie kein Votum verrät, und im
+Protokoll selbst — das aber nicht committet wird. Was die Übernahme dadurch verliert, ist
+nichts, was für die Behebung gebraucht würde: Ort, Kennung, Schweregrad, Fehlerbild und Status
+stehen unverändert dort. Zulässig ist „Runde 3 — zwei major-Befunde, beide behoben", unzulässig
+sind „Runde 3 — 2/4" und „major (X)".
 
 Ablage: `Reviews/<yyyymmdd>-<hhmmss>_<branch>.md` (Namensbereinigung siehe oben). Der Commit
 erfolgt erst, wenn alle blocker- und major-Befunde **mit Änderungsbezug** behoben sind;

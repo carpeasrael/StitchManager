@@ -70,9 +70,11 @@ gate_signature() {
   # den Cache-Schlüssel ändern (CLAUDE.md, "Gate-Cache").
   for f in "$ROOT/scripts/check-docs.sh" "$ROOT/scripts/check-plan.sh" \
            "$ROOT/scripts/lib/gestaltung.sh" "$ROOT/scripts/lib/lizenzen.py" \
+           "$ROOT/scripts/lib/dateien.sh" "$ROOT/scripts/lib/pruefumgebung.sh" \
            "$ROOT/.lizenzen.conf" \
            "$ROOT/scripts/check-projektregeln.sh" \
            "$ROOT/scripts/check-projektregeln.test.sh" "$ROOT/.projektregeln.conf" \
+           "$ROOT/scripts/check-qml.sh" "$ROOT/scripts/check-qml.test.sh" \
            "$ROOT/.npmrc" \
            "$ROOT/scripts/check-plan.test.sh" "$ROOT/.markdownlint-cli2.jsonc" \
            "$ROOT/package.json" "$ROOT/package-lock.json" "$ROOT/.claude/agents/"*.md; do
@@ -466,6 +468,11 @@ stage0b_plan() {
     "scripts/check-plan.sh" "scripts/check-plan.test.sh"
 }
 
+stage0b_qml() {
+  stage0b_selbsttest "QML-Prüfung" \
+    "scripts/check-qml.sh" "scripts/check-qml.test.sh"
+}
+
 # ── Stufe 0b — Gate-Selbsttest ───────────────────────────────────────────────
 stage0b_selftest() {
   local cmd="$GATE_SELFTEST_CMD"
@@ -767,6 +774,15 @@ stage0c_checks() {
   else
     record "0c Rust-Gates" "ENTFÄLLT" "kein Cargo.toml — es existiert noch kein Quellcode"
   fi
+  # QML-Gate (CLAUDE.md Abschnitt 11 und die Anwendbarkeitstabelle in
+  # Abschnitt 13). **Außerhalb des Cargo-Blocks**, denn sein Gegenstand ist
+  # `*.qml` im Baum, nicht ein Rust-Projekt: Unter Weg B (PySide6) läge QML
+  # ohne `Cargo.toml` im Baum, und das Gate erschiene im Protokoll weder als
+  # PASS noch als ENTFÄLLT — es fehlte schlicht. Die Reihenfolge bleibt
+  # gewahrt: `cargo clippy` steht im Block davor, und qmllint braucht das von
+  # cxx-qt erzeugte `plugin.qmltypes`, das dessen Bauschritt erzeugt. Das
+  # Skript meldet selbst ENTFÄLLT, solange kein `*.qml` im Baum liegt.
+  run_gate --rc3-entfaellt "0c QML" "$SCOPE_CODE" bash "$ROOT/scripts/check-qml.sh" || rc=1
   return $rc
 }
 
@@ -1047,6 +1063,7 @@ main() {
   if [ "$failed" = 0 ]; then stage0b_selftest || failed=1; fi
   if [ "$failed" = 0 ]; then stage0b_projektregeln || failed=1; fi
   if [ "$failed" = 0 ]; then stage0b_plan || failed=1; fi
+  if [ "$failed" = 0 ]; then stage0b_qml || failed=1; fi
   if [ "$failed" = 0 ]; then
     if [ "$REVIEW_GATE_RUN_TESTS" = "0" ]; then
       record "0c Schnell-Gates" "FAIL" "REVIEW_GATE_RUN_TESTS=0"
