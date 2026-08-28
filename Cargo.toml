@@ -1,0 +1,56 @@
+# StitchManager — Werkstattverbund
+#
+# Der Schnitt folgt IMP-STM-001 Abschnitt 3. Die Abhängigkeitsrichtung des
+# Verbunds erzwingt Schnittregel 1 (SM-SEC-004): `ui` hängt an `kern-fassade`
+# und darf `kern-db` nicht kennen. Ein Verstoß bricht den Bau, er ist damit
+# nicht auf eine Sichtprüfung angewiesen.
+
+[workspace]
+resolver = "2"
+# **Das Muster steht hier, nicht die Aufzählung.** Eine gepflegte Liste hat
+# zwei Fehlerrichtungen, und dieses Vorhaben hat beide erlebt: Ein Eintrag ohne
+# Verzeichnis macht **jeden** cargo-Aufruf unmöglich — auch `cargo metadata`,
+# `fmt`, `clippy`, `test` und `deny`. Und eine Kiste, die im Baum liegt und in
+# der Liste fehlt, wird von **keinem** Gate erfasst: Sie veraltet still gegen
+# die Kernschnittstelle, und keine Prüfung meldet es. Genau das ist
+# `kern-services` und `ui` widerfahren
+# (`Analysis/20260826_02_bestandsaufnahme.md`, Befund 1).
+#
+# Das Muster kennt beide Richtungen nicht. Es führt, was da ist, und es führt
+# alles, was da ist. SM-NFR-012 verlangt die automatisierte Prüfung für den
+# Baum, nicht für einen Ausschnitt davon.
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.82"
+license = "GPL-3.0-only"
+authors = ["StitchManager"]
+
+[workspace.dependencies]
+# Pfadabhängigkeiten tragen ihre Version mit. Ohne sie wertet `cargo deny`
+# sie als Platzhalterabhängigkeit (`wildcard`) und die Lizenz- und
+# Herkunftsprüfung schlägt fehl — zu Recht: Eine Abhängigkeit ohne Version ist
+# nicht reproduzierbar auflösbar (SM-PLT-009, SM-OSS-009).
+kern-typen = { path = "crates/kern-typen", version = "0.1.0" }
+kern-security = { path = "crates/kern-security", version = "0.1.0" }
+kern-parsers = { path = "crates/kern-parsers", version = "0.1.0" }
+kern-render = { path = "crates/kern-render", version = "0.1.0" }
+kern-db = { path = "crates/kern-db", version = "0.1.0" }
+kern-services = { path = "crates/kern-services", version = "0.1.0" }
+kern-fassade = { path = "crates/kern-fassade", version = "0.1.0" }
+
+thiserror = "2"
+log = "0.4"
+rusqlite = { version = "0.32", features = ["bundled", "backup"] }
+byteorder = "1"
+walkdir = "2"
+sha2 = "0.10"
+chrono = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

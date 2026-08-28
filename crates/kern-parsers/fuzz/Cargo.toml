@@ -1,0 +1,45 @@
+# Fuzzing-Ziele der Formatparser (SM-SEC-011, SM-FMT-012).
+#
+# Eigener Werkstattverbund: `cargo-fuzz` braucht den Nightly-Übersetzer und
+# `-Z` -Schalter; als Mitglied des Hauptverbunds zöge es beides in jeden
+# gewöhnlichen Bau. `[workspace]` ohne Mitglieder trennt die Bäume.
+[package]
+name = "kern-parsers-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "GPL-3.0-only"
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+kern-parsers = { path = ".." }
+kern-typen = { path = "../../kern-typen" }
+
+[[bin]]
+name = "pes"
+path = "fuzz_targets/pes.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "dst"
+path = "fuzz_targets/dst.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "jef"
+path = "fuzz_targets/jef.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "vp3"
+path = "fuzz_targets/vp3.rs"
+test = false
+doc = false

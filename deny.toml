@@ -1,0 +1,40 @@
+# Lizenz- und Herkunftsprüfung des Rust-Zweigs (SM-OSS-009, SM-OSS-011, AK-11).
+#
+# Positivliste, fail-closed: Eine Lizenz außerhalb der Liste lässt den Bau
+# scheitern. Erweitert wird sie, indem die Lizenz geprüft und der Eintrag
+# begründet wird — nie, indem die Prüfung gelockert wird (CLAUDE.md Abschnitt 11).
+#
+# Die Projektlizenz ist GPL-3.0-only; aufgeführt sind ausschließlich damit
+# verträgliche, permissive Lizenzen.
+
+[licenses]
+# Genau die Lizenzen, die im Baum vorkommen — keine auf Vorrat. Ein Eintrag
+# ohne Gegenstand macht die Liste unwahr und verdeckt, was sie eigentlich
+# erlaubt. Kommt eine Lizenz hinzu, wird sie geprüft und hier begründet.
+allow = [
+    "0BSD",            # adler2
+    "Apache-2.0",      # weit verbreitet, meist neben MIT
+    "BSD-2-Clause",    # zerocopy
+    "BSD-3-Clause",    # moxcms, pxfm
+    "GPL-3.0",         # die Projektlizenz selbst
+    "MIT",             # der Regelfall
+    "Unicode-3.0",     # unicode-ident
+    "Unlicense",       # byteorder, memchr, termcolor
+    "Zlib",            # bytemuck, foldhash, miniz_oxide
+]
+
+# Anmerkung zu `r-efi`: dreifach lizenziert (LGPL-2.1-or-later **oder** MIT
+# **oder** Apache-2.0). Die permissive Variante greift; die Kiste kommt über
+# `getrandom` für eine Zielplattform herein, die dieses Vorhaben nicht baut.
+confidence-threshold = 0.9
+
+[bans]
+# Mehrere Fassungen derselben Kiste sind ein Hinweis auf eine ungepflegte
+# Abhängigkeitskette und werden gemeldet, nicht stillschweigend hingenommen.
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
