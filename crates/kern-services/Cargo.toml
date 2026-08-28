@@ -1,0 +1,20 @@
+[package]
+name = "kern-services"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+kern-typen.workspace = true
+kern-fassade.workspace = true
+kern-render.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+kern-parsers.workspace = true
+# Die Prüffälle legen ihren Bestand über den Schreibpfad an; der nimmt ein
+# `Schreibziel` entgegen, nie einen rohen Pfad (SM-SEC-001 bis 003). Ohne diese
+# Abhängigkeit lässt sich in den Prüffällen kein geprüftes Ziel bilden.
+kern-security.workspace = true
+tempfile = "3"

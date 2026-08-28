@@ -1,0 +1,18 @@
+[package]
+name = "kern-fassade"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+kern-typen.workspace = true
+kern-db.workspace = true
+kern-security.workspace = true
+kern-parsers.workspace = true
+kern-render.workspace = true
+sha2.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
