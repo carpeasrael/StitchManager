@@ -1,10 +1,10 @@
 # StitchManager — Implementierungsplan
 
 **Kennung:** IMP-STM-001
-**Version:** 1.0
-**Datum:** 24.08.2026
-**Führendes Dokument:** URS-STM-001 (Lastenheft) v1.3
-**Mitgeltend:** DES-STM-001 (Design-Beschreibung) v1.3 · TEC-STM-001 (Tech-Stack) v2.2
+**Version:** 1.1
+**Datum:** 29.08.2026
+**Führendes Dokument:** URS-STM-001 (Lastenheft) v1.4
+**Mitgeltend:** DES-STM-001 (Design-Beschreibung) v1.4 · TEC-STM-001 (Tech-Stack) v2.3
 **Status:** Entwurf — zur Prüfung und Freigabe
 **Nachweis der Herleitung:** `Analysis/20260823_03_implementierungsplan.md`
 
@@ -29,8 +29,9 @@ Dieselbe Rangfolge steht in `CLAUDE.md` Abschnitt 3.
 **Dieses Dokument begründet keine Anforderung.** Ergibt sich beim Planen eine, wird sie im
 Lastenheft aufgenommen und hier nur referenziert. Ein Arbeitspaket, das eine Leistung enthielte,
 für die keine Kennung existiert, ist ein Planungsfehler und kein Zusatzumfang. Acht bei der Prüfung
-dieses Plans aufgeworfene Lücken sind deshalb als **OP-14** bis **OP-21** ins Lastenheft
-gegangen, nicht in ein Arbeitspaket.
+dieses Plans aufgeworfene Lücken gingen deshalb zunächst als **OP-14** bis **OP-21** ins
+Lastenheft. URS-STM-001 v1.4 hat OP-15 bis OP-17 entschieden und mit SM-NFR-015, SM-NFR-016
+und SM-LIB-011 geschlossen; OP-19 ist in SM-SET-002 präzisiert.
 
 **Der Plan schränkt auch keine Anforderung ein.** Wo der Wortlaut einer Anforderung weiter reicht,
 als ein Arbeitspaket abdeckt, wird die Weite benannt und die Lücke als offener Punkt geführt —
@@ -46,7 +47,7 @@ als **nachgeordnet** und mit dem Zusatz, dass es keine Anforderung begründet od
 
 Ursprünglich war die Nichtaufnahme damit begründet, dass sie eine Versionserhöhung des Lastenhefts
 samt Kopfzeilennachzug in DES-STM-001 und TEC-STM-001 auslösen würde. Diese Kosten sind mit
-URS-STM-001 v1.3 ohnehin angefallen (OP-14 bis OP-20); die Begründung trug damit nicht mehr und
+URS-STM-001 v1.4 ohnehin angefallen (OP-14 bis OP-20); die Begründung trug damit nicht mehr und
 wurde fallen gelassen.
 
 ### 0.3 Was dieses Dokument nicht ist
@@ -89,10 +90,10 @@ die Entscheidung zwischen den beiden Anbindungswegen; diese Entscheidung steht a
 
 | Priorität | Im Lastenheft | In Version 1.0 verplant | Zurückgestellt |
 |---|---|---|---|
-| **M — Muss** | 126 | **126** | 0 |
+| **M — Muss** | 129 | **129** | 0 |
 | **S — Soll** | 79 | **11** (nachgezogen, Abschnitt 1.2) | 68 |
 | K — Kann | 17 | 0 | 17 |
-| **Summe** | 222 | **137** | 85 |
+| **Summe** | 225 | **140** | 85 |
 
 Der Regelumfang ist **Muss**. URS-STM-001 Abschnitt 1.4 verlangt für die Streichung von
 Soll-Anforderungen eine Begründung und deren Dokumentation; sie steht in Kapitel 10.
@@ -115,7 +116,7 @@ Umfangsentscheidung, keine Neubewertung der Priorität — im Lastenheft bleiben
 | **SM-NFR-009** | DES-STM-001 Abschnitt 2 legt verbindlich fest: „Farbe trägt nie allein." Ohne SM-NFR-009 dürften Auswahl-, Fehler- und Erfolgszustände allein farblich unterschieden werden. Das zweite Zustandsmerkmal entsteht einmalig in der Gestaltungsgrundlage und ist dort billiger als jede spätere Nachrüstung |
 | **SM-NFR-013** | DES-STM-001 Abschnitt 8 sagt zur reduzierten Bewegung „**alle** Übergänge … Keine Ausnahme". AP-11 baut Themenwechsel und Zustandsübergänge; ohne die Abfrage der Systemeinstellung hätten bewegungsempfindliche Nutzer keinen Ausweg. Macht zugleich Prüfpunkt D-07 wieder abnehmbar |
 | **SM-FMT-010**, **SM-MET-010** | SM-DES-008 (Muss) verlangt den Detailabschnitt „**Farben**", den DES-STM-001 Abschnitt 6.4 als Liste mit Farbfeld, Garnname, Garnnummer und Stichanteil festlegt. Ohne diese beiden Kennungen hätte der Abschnitt dauerhaft nur Farbanzahl und Farbwechsel — eine **Muss**-Anforderung bliebe auf Dauer teilweise unerfüllt. Für Soll-Streichungen sieht URS-STM-001 Abschnitt 1.4 diesen Weg vor, für Muss-Anforderungen nicht |
-| **SM-SET-002**, **SM-SET-003** | SM-SET-001 fordert nur, dass beide Modi **angeboten** werden — die Übernahme der Systemeinstellung samt manueller Übersteuerung liegt in SM-SET-002, Panelbreiten und Fensterzustand in SM-SET-003. Beide Leistungen ohne ihre Kennung zu führen hieße, SM-SET-001 weiter auszulegen, als sie geschrieben ist (Abschnitt 0.1). Ob die Übersteuerung darüber hinaus den Neustart übersteht, deckt keine der beiden eindeutig ab; diese Lücke ist als **OP-19** geführt, nicht durch Auslegung geschlossen |
+| **SM-SET-002**, **SM-SET-003** | SM-SET-001 fordert nur, dass beide Modi **angeboten** werden — die Übernahme der Systemeinstellung samt neustartbeständiger manueller Übersteuerung liegt nach der Entscheidung zu OP-19 in SM-SET-002, Panelbreiten und Fensterzustand in SM-SET-003. Beide Leistungen ohne ihre Kennung zu führen hieße, SM-SET-001 weiter auszulegen, als sie geschrieben ist (Abschnitt 0.1) |
 | **SM-KIA-001** | SM-KIA-007 (Muss, Feldübernahme), SM-KIA-008 (Muss, Kennzeichnung) und SM-DES-009 (Muss, Unterscheidbarkeit) setzen voraus, dass **Vorschläge** entstehen. SM-KIA-002 fordert nur die lokale Verarbeitung, nicht die Erzeugung von Metadatenvorschlägen aus dem Vorschaubild — das ist SM-KIA-001. Ohne diese Kennung hinge die gesamte Kennzeichnungs- und Übernahmekette an einer Auslegung von SM-KIA-002, die dem Plan nicht zusteht (Abschnitt 0.1) |
 | **SM-SET-004** | SM-NFR-008 (Muss) sichert die vollständige Tastaturbedienung zu. Für Nutzer, die ausschließlich mit der Tastatur arbeiten, ist ohne Kürzel jede häufige Aktion nur über Fokuswanderung erreichbar — Erreichbarkeit ohne Kürzel erfüllt den Buchstaben, nicht den Zweck. Die Zurückstellung wäre zudem schwächer begründet als die der bereits nachgezogenen Kennungen |
 | **SM-SEC-010** | SM-NFR-006 (Muss) schreibt technische Angaben ausschließlich ins Protokoll — also die vollständigen Bibliothekspfade. Die Zurückstellung wäre nur haltbar, wenn „exportierbar" eng als „durch eine Ausleitfunktion der Anwendung" gelesen würde; eine Protokolldatei im Anwendungsverzeichnis ist aber faktisch exportierbar, sobald ein Nutzer sie einer Supportanfrage anhängt. Diese Auslegung steht dem Plan nicht zu (Abschnitt 0.1). Die Maskierung im Protokollschreiber ist eine einmalige Funktion |
@@ -135,13 +136,13 @@ jeder Umfangsänderung fortgeschrieben.
 | Abschnitt 6.2, Navigationsgruppen | SM-LIB-005 bis SM-LIB-007, SM-PRJ-001 | Die Gruppen „Intelligente Ordner“ (SM-LIB-006) und „Arbeit“ (SM-PRJ-001) entstehen nicht; Sammlungen und Favoriten (SM-LIB-005, SM-LIB-007) erscheinen dort ohnehin nicht als eigene Gruppe, sondern als Einträge der Gruppe „Bibliothek“ |
 | Abschnitt 10, Zustand „Datei nicht auffindbar“ mit Schaltfläche „Neu verknüpfen“ | SM-EXP-010 | Die Schaltfläche entfällt; die Abhilfe steht nur als Text (AP-12, Wortlaut nach PV-06) |
 | Abschnitt 6.4, Abschnittsfolge des Detailbereichs endet mit „Projekte" | SM-PRJ-001 | Der letzte Abschnitt der fest geordneten Folge entfällt |
-| Abschnitt 10, Leerzustand, Trefferlosigkeit und Abbruch langer Vorgänge | ohne Kennung — **OP-15** | Alle drei sind beschrieben, aber nicht abnehmbar. AP-12 bis AP-18 bauen die Zustände nach DES-STM-001; die Nachweise `PF-OP15-*` hängen an der Beantwortung von OP-15. Gedeckt sind dagegen die feststehende Kachelhöhe (SM-PRV-009), der Klartextgrund (SM-NFR-006), die Fortschrittsanzeige des Imports (SM-IMP-002) und der Abbruch von Stapelvorgängen (SM-BAT-005) |
-| Abschnitt 7, Zustandstabelle und Mindestgrößen von Bedienelementen | ohne Kennung — **OP-16** | AP-11 setzt beides um; ohne Kennung ist die Treffbarkeit kleiner Bedienelemente nicht abnehmbar |
-| Abschnitt 6.2, Übersichtskarte der Navigationsspalte | ohne Kennung — **OP-17** | AP-12 setzt sie um; ohne Kennung fehlt der Abnahmebezug |
+| Abschnitt 10, Leerzustand, Trefferlosigkeit und Abbruch langer Vorgänge | SM-NFR-015 | AP-12 bis AP-18 bauen und prüfen die Zustände; die früheren vorläufigen `PF-OP15-*` sind PF-NFR-15-Unterfälle |
+| Abschnitt 7, Zustandstabelle und Mindestgrößen von Bedienelementen | SM-NFR-016 | AP-12 weist Zustände und Trefferflächen nach; Trenner besitzen eine 32 px breite unsichtbare Trefferzone um die schmale sichtbare Linie |
+| Abschnitt 6.2, Übersichtskarte der Navigationsspalte | SM-LIB-011 | AP-12 setzt Gesamtbestand und Formatverteilung um; OP-12 betrifft nur zusätzliche Kennzahlen |
 
 ### 1.4 Vollständigkeit der Zuordnung
 
-Jede der 137 verplanten Anforderungen ist **genau einem** Arbeitspaket zugeordnet. Mehrfache
+Jede der 140 verplanten Anforderungen ist **genau einem** Arbeitspaket zugeordnet. Mehrfache
 Zuordnung ist unzulässig: Sie verteilt die Verantwortung und macht den Abschluss eines Pakets
 unentscheidbar.
 
@@ -161,24 +162,26 @@ Wirkungstabelle aus `CLAUDE.md` Abschnitt 8.
 
 ### 2.1 Punkte, die vor dem Beginn zu beantworten sind
 
+**Am 29.08.2026 beantwortet:** OP-13 und die Wegentscheidung bestätigen die Wiederverwendung des
+Rust-Kerns mit Weg A/cxx-qt. OP-07 gibt die Festbreitenschrift frei. OP-09 hält die Farbwerte bis
+zum Markenabgleich vorläufig. OP-15 bis OP-17 erzeugen SM-NFR-015, SM-NFR-016 und SM-LIB-011;
+OP-19 präzisiert SM-SET-002. Diese Punkte sperren AP-11 bis AP-18 nicht mehr.
+
 | Nr | Frage in Kurzform | Wartende Arbeitspakete | Klärungsweg |
 |---|---|---|---|
-| **OP-13** | Wiederverwendung des vorhandenen Rust-Kerns oder Neuentwicklung? | AP-03 bis AP-06, AP-09 (Umfang, nicht Gegenstand) | Entscheidung des Auftraggebers. Die Pakete sind fachlich geschnitten und unter beiden Antworten dieselben; die Antwort ändert Aufwand und Ausgangspunkt |
+| **OP-13** | Wiederverwendung des vorhandenen Rust-Kerns oder Neuentwicklung? | **beantwortet; keine wartenden Pakete** | Weg A: Rust-Kern wiederverwenden, Anbindung über cxx-qt |
+| **OP-07** | Festbreitenschrift für Zahlen und Maße freigegeben? | **beantwortet; keine wartenden Pakete** | freigegeben |
+| **OP-09** | Rekonstruierte Farbwerte gegen den Markenstandard abgeglichen? | **beantwortet; keine wartenden Pakete** | noch nicht abgeglichen; Werte bleiben bis zur visuellen Markenabnahme vorläufig |
+| **OP-15** | Eigene Anforderung für Zustände und Abbruch? | **beantwortet; keine wartenden Pakete** | SM-NFR-015 aufgenommen |
+| **OP-16** | Eigene Anforderung für Zustände und Mindestgrößen? | **beantwortet; keine wartenden Pakete** | SM-NFR-016 aufgenommen; Trenner mit 32-px-Trefferzone |
+| **OP-17** | Eigene Anforderung für die Übersichtskarte? | **beantwortet; keine wartenden Pakete** | SM-LIB-011 aufgenommen |
+| **OP-19** | Übersteht die manuelle Darstellungswahl den Neustart? | **beantwortet; keine wartenden Pakete** | ja; SM-SET-002 präzisiert |
 | **OP-01** | Einzelplatz oder Synchronisation zwischen Geräten? | AP-04, AP-05 | Entscheidung des Auftraggebers. Bei Bejahung entstehen neue Anforderungen im Lastenheft; dieser Plan verplant ausschließlich die Einzelplatzfunktionen |
-| **—** | Weg A (cxx-qt) gegen Weg B (PySide6 mit PyO3) | AP-11 bis AP-15 | **AP-00 schafft die Grundlage:** Prototypvergleich an einer virtualisierten Liste mit 100.000 Einträgen und an einem Testdruck mit Kalibrierquadrat, gemessen am körperlichen Ausdruck gegen die Toleranz aus SM-PRN-006 |
-| **OP-07** | Festbreitenschrift für Zahlen und Maße freigegeben? | AP-11, AP-12 | Freigabe des Auftraggebers |
-| **OP-09** | Rekonstruierte Farbwerte gegen den Markenstandard abgeglichen? | AP-11, AP-12 | Abgleich gegen den Markenstandard. Entwickelt wird gegen die Bezeichner, nie gegen Werte — der Abgleich ändert eine Datei, kein Bauteil |
-| **OP-15** | Eigene Anforderung für leere, ladende und fehlerhafte Zustände? | AP-11 bis AP-18 | Entscheidung des Auftraggebers |
-| **OP-16** | Eigene Anforderung für Zustandstabelle und Mindestgrößen? | AP-11, AP-12 | Entscheidung des Auftraggebers |
-| **OP-17** | Eigene Anforderung für die Übersichtskarte? | AP-12 | Entscheidung des Auftraggebers; hängt mit OP-12 zusammen |
-| **OP-19** | Übersteht die manuelle Übersteuerung der Darstellungsart den Neustart? | AP-11, AP-12 | Entscheidung des Auftraggebers |
 | **OP-20** | Eigene Anforderung für die Sammelaktionen der Hinweisbox? | AP-18 | Entscheidung des Auftraggebers |
 
-**Warum diese sieben hier und nicht im nächsten Abschnitt:** Das Lastenheft setzt für OP-07,
-OP-09, OP-15 bis OP-17, OP-19 und OP-20 dieselbe Frist — vor Umsetzungsbeginn der Oberfläche.
-AP-11, AP-12 und AP-18 **sind** dieser Beginn. Sie in Abschnitt 2.2 zu führen hieße, eine
-Festlegung des führenden Dokuments in einem nachgeordneten aufzuweichen — nach `CLAUDE.md`
-Abschnitt 3 unzulässig.
+OP-01 und OP-20 bleiben hier, weil ihre Fristen vor dem jeweiligen Umsetzungsbeginn liegen.
+AP-04/AP-05 arbeiten bis OP-01 unter der ausdrücklichen Einzelplatzannahme; AP-18 beginnt nicht,
+bevor OP-20 entschieden ist.
 
 ### 2.2 Punkte mit Termin, aber ohne sofortige Sperre
 
@@ -324,14 +327,14 @@ zuordnenden Paket entsteht:
 | Deutschsprachige Oberfläche | SM-SET-006 | **AP-12** (erste Oberflächentexte) | AP-13 bis AP-18; Abschlussnachweis AP-20 |
 | Verständliche Fehlertexte | SM-NFR-006 | **AP-12** (erster Fehlertext) | AP-13 bis AP-18; Abschlussnachweis AP-20 |
 | **Fremdtext nur als Nur-Text** | SM-SEC-008 | **AP-12** (Kachelname, Filter-Chips, Ordnerbaum) | AP-13, AP-14, **AP-15**, AP-16, AP-17, AP-18 |
-| **Leerer, ladender und fehlerhafter Zustand je Bildschirm** | ohne Kennung — **OP-15**, vorläufige Prüffälle `PF-OP15-01` bis `PF-OP15-10` | AP-12 | AP-13 bis AP-18 |
+| **Leerer, ladender und fehlerhafter Zustand je Bildschirm; konsistenter Abbruch** | SM-NFR-015, PF-NFR-15.1 bis .10 | AP-12 | AP-13 bis AP-18 |
 | **Schichttrennung: keine Oberfläche greift unmittelbar auf `kern/db` zu** | SM-SEC-004 | AP-05 (Inspektion der Fassade, PF-SEC-04.1) | AP-12 (PF-SEC-04.2) und jedes folgende Oberflächenpaket |
 | **Tragfähigkeit bei 100.000 Einträgen** | SM-LIB-009, SM-NFR-001 | AP-07 bzw. AP-10 (kernseitig, gegen den Prüfbestand) | AP-12 und jedes folgende Oberflächenpaket — erst dort zeigt sich, ob der Bestand auch **bedient** tragfähig bleibt |
 | **Zweites Zustandsmerkmal neben der Farbe** | SM-NFR-009 | AP-11 (Bezeichner und Muster) | AP-12 bis AP-18, je neuem Zustand |
 | **Reduzierte Bewegung wirkt** | SM-NFR-013 | AP-11 (Abfrage der Systemeinstellung) | AP-12 bis AP-18, je neuem Übergang **oder neuer Bewegung, einschließlich Ladeanzeigen** |
 | **Kontrast über alle Textpaare** | SM-NFR-007 | AP-11 (rechnerisch gegen die Variablendatei) | AP-12 bis AP-18, je neuem Textpaar |
 | **Themenwechsel, Fokusring, Nahtelemente** | Prüfpunkte D-03, D-04, D-06, D-11; AK-07 | AP-12 (erstes Paket mit Komponenten) | jedem Oberflächenpaket |
-| **Zustandsbelegung und Mindestgrößen der Bedienelemente** | ohne Kennung — **OP-16**, `PF-OP16-01` bis `PF-OP16-03` | AP-12 (erstes Paket mit Bedienelementen; AP-11 liefert nur Bezeichner und Werte) | jedem Oberflächenpaket |
+| **Zustandsbelegung und Mindestgrößen der Bedienelemente** | SM-NFR-016, PF-NFR-16.1 bis .3 | AP-12 (erstes Paket mit Bedienelementen; AP-11 liefert Bezeichner und Werte) | jedem Oberflächenpaket |
 
 **Zu SM-SEC-004:** In AP-05 existiert noch kein Oberflächenmodul; die Regel „die Oberfläche greift
 nie unmittelbar auf `kern/db` zu" kann dort nur *leer* bestehen. Verletzbar wird sie erst ab
@@ -349,17 +352,11 @@ AP-13 ließe genau die Stellen ungebunden, die der Anforderungstext ausdrücklic
 ist unfertig". Das gilt für den Detailbereich, die Dokumentanzeige, die Druckvorschau, den
 Exportdialog, die Stapelvorschau und die Analyse ebenso wie für die Musterauswahl.
 
-**Vorläufige Prüffallkennungen für Leistungen ohne Anforderungskennung.** Das Zustandstrio
-(OP-15), Zustandstabelle und Mindestgrößen (OP-16) sowie das Fortbestehen der Übersteuerung
-(OP-19), die Übersichtskarte (OP-17) und die Sammelaktionen der Hinweisbox (OP-20) tragen
-eigene Kennungen `PF-OP15-*`, `PF-OP16-*`, `PF-OP17-*`, `PF-OP19-*` und `PF-OP20-*`, **nicht**
-Unterfälle fremder Anforderungen. Sie als
-`PF-DES-03.2` unter SM-DES-003 oder als `PF-DES-08.2` unter SM-DES-008 zu führen hieße, diese
-Muss-Anforderungen weiter auszulegen, als sie geschrieben sind — SM-DES-003 verlangt
-ausschließlich, dass Farb-, Schrift- und Abstandswerte als Variablen vorliegen. Ein grünes
-`PF-DES-03` behauptete dann zugleich, die Treffbarkeit sei nachgewiesen. Der Nachweisbezug aller
-`PF-OP15-*`, `PF-OP16-*` und `PF-OP19-*` steht unter dem **Vorbehalt der Beantwortung** des
-jeweiligen offenen Punkts; bis dahin sind sie durchführbar, aber keiner Anforderung zugeordnet.
+**Nachgezogene Prüffallkennungen.** Die Entscheidungen zu OP-15 bis OP-17 und OP-19 haben die
+vorläufigen Kennungen abgelöst: `PF-OP15-*` wird zu `PF-NFR-15.*`, `PF-OP16-*` zu
+`PF-NFR-16.*`, `PF-OP17-01` zu `PF-LIB-11` und `PF-OP19-01` zu `PF-SET-02.3`. Nur
+`PF-OP20-01` bleibt vorläufig, bis OP-20 entschieden ist. Die alten Kennungen werden nicht für
+andere Gegenstände wiederverwendet.
 
 **Zu den Prüfpunkten D-03, D-04, D-06 und D-11:** Sie prüfen den Themenwechsel „auf allen
 Bildschirmen und Dialogen", den Fokusring an „jedem bedienbaren Element" und die Nahtelemente „an
@@ -627,28 +624,25 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   SM-SET-003, SM-SET-004, SM-NFR-007, SM-NFR-008, SM-NFR-009, SM-NFR-013
 - **Mitwirkung:** SM-DES-009 (dieses Paket stellt die Marken und Flächen der Kennzeichnung bereit;
   nachgewiesen wird sie dort, wo sie erscheint — AP-12, AP-13 und AP-18)
-- **Vorbedingungen:** AP-00 (Wegentscheidung); **OP-07, OP-09, OP-15, OP-16 und OP-19 vor Beginn**
-  (Abschnitt 2.1 — die Fristen des Lastenhefts lauten „vor Umsetzungsbeginn der Oberfläche").
+- **Vorbedingungen:** AP-00; die früheren Gatter OP-07, OP-09, OP-15, OP-16 und OP-19 sind in
+  URS-STM-001 v1.4 entschieden. Die Farbwerte bleiben nach OP-09 bis zum Markenabgleich
+  vorläufig; entwickelt wird gegen Bezeichner.
 - **Ergebnis:** Genau eine Datei mit allen Farb-, Schrift- und Abstandsbezeichnern; warme Palette
   mit Terracotta als Leitfarbe; Dunkelmodus in Espressotönen ohne neutrales Grau; Übernahme der
   Systemeinstellung mit manueller Übersteuerung (SM-SET-002) und Speicherung der Panelbreiten über
-  Sitzungen hinweg (SM-SET-003) — beide nach Abschnitt 1.2 nachgezogen. **Ob die getroffene
-  Übersteuerung den Neustart übersteht**, sagt keine der beiden Kennungen eindeutig; die Lücke ist
-  als **OP-19** geführt, vorläufiger Prüffall `PF-OP19-01` — wer aus Lichtempfindlichkeit auf den
-  Dunkelmodus angewiesen ist, stellte ihn sonst bei jedem Start neu ein; eingebettete, zur
+  Sitzungen hinweg (SM-SET-003) — beide nach Abschnitt 1.2 nachgezogen. Die manuelle
+  Übersteuerung übersteht den Neustart (SM-SET-002, PF-SET-02.3); eingebettete, zur
   Laufzeit registrierte Schriften ohne Nachladen; **alle Symbole als Vektor** (DES-STM-001
-  Abschnitt 11, Zeile „Hohe Auflösung“); Themenwechsel zur Laufzeit — ob die manuelle
-  Übersteuerung den Neustart übersteht, entscheidet **OP-19**; durchgehend sichtbarer Fokusring,
+  Abschnitt 11, Zeile „Hohe Auflösung“); Themenwechsel zur Laufzeit; durchgehend sichtbarer
+  Fokusring,
   nie unterdrückt; Raster-, Radien- und Rahmenbezeichner nach DES-STM-001 Abschnitt 5, Dauer- und
   Verlaufsbezeichner nach Abschnitt 8 sowie die Layoutmaße aus Abschnitt 5 und 6.3 — Höhen von
   Werkzeug- und Statusleiste, Spaltenbreiten und
   ihre Wachstumsfaktoren, Spaltenbreite und Abstände des Kachelrasters, **Ziehfläche der
-  Trenner**, deren Maß OP-16 entscheidet; **die Werte der Zustandsbelegung je Komponente** nach
-  DES-STM-001 Abschnitt 7 in **beiden** Modi und **die Mindestgrößen als Bezeichner** — die Werte
-  stehen dort, nicht im Plan; das Lastenheft führt für beides keine Kennung, geführt als
-  **OP-16**, unter dem zusätzlich strittig ist, welches Maß für die Trenner gilt. Dass beides an
-  jedem gebauten
-  Bedienelement auch **anliegt**, weist AP-12 nach (`PF-OP16-01`, `PF-OP16-02`); in AP-11
+  Trenner** samt 32-px-Trefferzone; **die Werte der Zustandsbelegung je Komponente** nach
+  DES-STM-001 Abschnitt 7 in **beiden** Modi und **die Mindestgrößen als Bezeichner**
+  (SM-NFR-016). Dass beides an jedem gebauten Bedienelement auch **anliegt**, weist AP-12 nach
+  (`PF-NFR-16.1`, `PF-NFR-16.2`); in AP-11
   existiert noch kein Bedienelement, der Nachweis könnte dort nur leer bestehen. Vollständige
   Tastaturerreichbarkeit jedes Bedienelements und **Tastaturkürzel für die häufigsten Aktionen**
   (SM-SET-004, nach Abschnitt 1.2 nachgezogen); **jeder Zustand trägt neben der Farbe ein zweites
@@ -664,7 +658,7 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   und läuft ab AP-13 als Regression mit; PF-NFR-08.2 (Fokusfang und Fokusrückgabe am
   Dialoggerüst) fällt in AP-12, weil das Dialoggerüst dort entsteht. **Warum die Teilung von
   .1 nötig ist:** In AP-11 existiert noch kein Bedienelement — derselbe Grund, aus dem die
-  Zeilen darüber D-06 und `PF-OP16-01/02` nach AP-12 ziehen. Ein dort geführter Nachweis der
+  Zeilen darüber D-06 und `PF-NFR-16.1/.2` nach AP-12 ziehen. Ein dort geführter Nachweis der
   Erreichbarkeit bestünde zwangsläufig leer, und ein Bedienelement ohne Fokusring fiele erst
   im Regressionslauf auf, im ungünstigsten Fall erst in AP-22 nach der Paketierung. Getroffen
   wären genau die Nutzer, die ausschließlich mit der Tastatur arbeiten.
@@ -673,7 +667,7 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   Neustart); PF-NFR-07 (rechnerisch gegen die Variablendatei), PF-NFR-08.1, PF-NFR-09,
   PF-NFR-13, PF-SET-04.1 (Kürzel registriert, konfliktfrei und im Menü angezeigt);
   Prüfpunkt D-07. **Nicht hier:** PF-SET-01.2,
-  PF-OP19-01 und PF-IMP-05.2 fallen in AP-12 und binden diesen Abschluss nicht. **Nicht hier:**
+  PF-SET-02.3 und PF-IMP-05.2 fallen in AP-12 und binden diesen Abschluss nicht. **Nicht hier:**
   AK-07 sowie die Prüfpunkte D-03, D-06 und D-11 setzen Komponenten voraus, die erst in AP-12
   entstehen — Erstnachweis dort, Regressionslauf in jedem folgenden Oberflächenpaket (Abschnitt
   4.2).
@@ -685,7 +679,8 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
 - **Ziel:** Die dreispaltige Aufteilung mit ihren drei Spalten, den Zuständen aus DES-STM-001
   Abschnitt 10 und einem Dialoggerüst, das den Fokus hält.
 - **Zugeordnet:** SM-DES-005, SM-DES-006, SM-DES-007, SM-PRV-007, SM-PRV-009, SM-LIB-002,
-  SM-IMP-002, SM-DAT-003, SM-SRC-008, SM-SRC-009, SM-NFR-003, SM-SEC-008, SM-SET-006, SM-NFR-006
+  SM-LIB-011, SM-IMP-002, SM-DAT-003, SM-SRC-008, SM-SRC-009, SM-NFR-003, SM-NFR-015,
+  SM-NFR-016, SM-SEC-008, SM-SET-006, SM-NFR-006
 - **Mitwirkung:** SM-NFR-008 (**Erstnachweis PF-NFR-08.2** — Fokusfang und Fokusrückgabe am
   Dialoggerüst), SM-NFR-002 (**PF-NFR-02.2** — Eingabelatenz unter Importlast; Beitrag zu AK-01),
   SM-SEC-004 (**PF-SEC-04.2** — hier wird die Schichttrennung erstmals verletzbar), SM-SRC-005
@@ -693,14 +688,14 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   (die Marke maschinell erzeugter Werte sitzt auf der Kachel), SM-SET-001 (**PF-SET-01.2** — der
   Umschalter wirkt auf allen Bildschirmen), SM-LIB-001 (**PF-LIB-01.2** — die
   Bibliothekswurzel braucht einen Bedienweg, sonst bleibt sie kernseitig), SM-SET-002
-  (**PF-SET-02.2** — die manuelle Übersteuerung wird über denselben Weg erreicht),
+  (**PF-SET-02.2/.3** — die manuelle Übersteuerung wird erreicht und bleibt nach Neustart),
   SM-IMP-005 (**PF-IMP-05.2** — die Entscheidungsvorlage
   bei Duplikaten steht auf dem Dialoggerüst), SM-DAT-001 (**PF-DAT-01.2** — Sichern und
   Wiederherstellen brauchen einen Bedienweg, sonst bleiben sie kernseitig),
   SM-NFR-007, SM-NFR-009, SM-NFR-013 (Regressionslauf nach Abschnitt 4.2)
-- **Vorbedingungen:** AP-05, AP-09, AP-10, AP-11, **AP-02 (Prüfbestand Stufe b)**; **OP-07, OP-09,
-  OP-15 bis OP-17 und OP-19 vor Beginn** (Abschnitt 2.1); **OP-18** für die Abnahme von PF-SRC-08
-  und PF-NFR-02.2 — bis zur Antwort werden beide als Regressionsschwelle geführt.
+- **Vorbedingungen:** AP-05, AP-09, AP-10, AP-11, **AP-02 (Prüfbestand Stufe b)**. Die früheren
+  Oberflächengatter sind in URS-STM-001 v1.4 entschieden. **OP-18** bleibt für die Abnahme von
+  PF-SRC-08 und PF-NFR-02.2 offen; beide werden bis dahin als Regressionsschwelle geführt.
 - **Ergebnis:** Dreispaltiges Hauptfenster mit verschiebbaren Trennern; keine gestapelte
   Ersatzdarstellung, unterhalb der Mindestbreite waagerechtes Scrollen; **Navigationsspalte** mit
   Übersichtskarte und Ordnerbaum; virtualisiertes Kachelraster, das nur sichtbare Einträge
@@ -711,11 +706,10 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   und Chip „Zurücksetzen", rechts Trefferzahl und Sortiersteuerung in Festbreite**; Bestand,
   Treffer und Auswahl in der Statusleiste; entprellte Sucheingabe ohne Blockade der Bedienung;
   keine harte Obergrenze der darstellbaren Einträge; **Fortschritt langer Vorgänge in der
-  Statusleiste mit Abbruch, nicht als modaler Dialog** — die Abbruchmöglichkeit außerhalb der
-  Stapelverarbeitung trägt keine Kennung und ist als **OP-15** geführt, Prüffall `PF-OP15-09`;
+  Statusleiste mit Abbruch, nicht als modaler Dialog** (SM-NFR-015, PF-NFR-15.9);
   **Bedienweg zu den Einstellungen** aus der Werkzeugleiste — ohne ihn sind Darstellungsart und
   Bibliothekswurzel nicht erreichbar (SM-SET-001, SM-SET-002, SM-LIB-001; nachgewiesen über
-  PF-SET-01.2, **PF-SET-02.2** und **PF-LIB-01.2**); der Betriebsmodus bleibt mit SM-SET-008
+  PF-SET-01.2, **PF-SET-02.2/.3** und **PF-LIB-01.2**); der Betriebsmodus bleibt mit SM-SET-008
   zurückgestellt;
   **Dialoggerüst mit Fokusfang und Fokusrückgabe**, darauf die Bestätigung vor dem Löschen — für
   Eintrag, Datei und Ordner. **Im Zeichenpfad findet keine Datei- oder Datenbank-E/A statt**:
@@ -729,18 +723,18 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   im Text statt einer Schaltfläche — die Schaltfläche „Neu verknüpfen" hängt an SM-EXP-010 und ist
   zurückgestellt, ein Fehlertext ohne Abhilfe erfüllt SM-NFR-006 aber nicht. Den **Wortlaut** legt
   das Pflichtenheft fest (PV-06); der Plan fordert nur, dass er eine Abhilfe nennt. Leerzustand
-  und Trefferlosigkeit tragen keine eigene Kennung — geführt als **OP-15**, Prüffall PF-OP15-01.
+  und Trefferlosigkeit tragen SM-NFR-015 und werden in PF-NFR-15.1 geprüft.
   **Die Zustände gelten für beide gebauten Spalten:** In der Navigationsspalte betrifft das die
   noch nicht gesetzte Bibliothekswurzel (leer), den Aufbau von Ordnerbaum und Übersichtskarte
   (ladend) und ein nicht lesbares Wurzelverzeichnis (fehlerhaft).
 - **Nachweis:** PF-DES-05.1, PF-DES-06.1, PF-DES-07, PF-PRV-07.1, PF-PRV-09, PF-LIB-02,
   PF-IMP-02, PF-DAT-03.1 bis PF-DAT-03.3 (Eintrag, Datei, Ordner), PF-SRC-08, PF-SRC-09,
   PF-NFR-03, PF-SEC-08, PF-SET-06,
-  PF-NFR-06, PF-OP15-01, PF-OP15-08, PF-OP15-09, **PF-OP16-01 bis PF-OP16-03, PF-OP17-01 und
-  PF-OP19-01**;
+  PF-NFR-06, PF-NFR-15.1, PF-NFR-15.8, PF-NFR-15.9, **PF-NFR-16.1 bis PF-NFR-16.3,
+  PF-LIB-11 und PF-SET-02.3**;
   zusätzlich PF-NFR-08.3 (Erreichbarkeit und sichtbarer Fokusring an jedem gebauten
   Bedienelement), PF-SET-04.2 (das Kürzel löst die zugeordnete Aktion aus, nicht nur ihre
-  Registrierung), PF-NFR-08.2, PF-NFR-02.2, PF-SEC-04.2, PF-LIB-01.2 und PF-SET-02.2 aus der
+  Registrierung), PF-NFR-08.2, PF-NFR-02.2, PF-SEC-04.2, PF-LIB-01.2 und PF-SET-02.2/.3 aus der
   Mitwirkung sowie
   PF-NFR-07, PF-NFR-09 und PF-NFR-13 als Regressionslauf nach Abschnitt 4.2; AK-01, AK-07, AK-12;
   Prüfpunkte D-01, D-02, D-03, D-04 (Anwendung auf die gebauten Textpaare; die Rechnung fällt in
@@ -761,7 +755,7 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   vollständig nachweisbar), **SM-PRV-007** (PF-PRV-07.2 — auch die Farbliste ist virtualisiert,
   DES-STM-001 Abschnitt 11), SM-FMT-008 und SM-FMT-010 (liefern den Inhalt des Abschnitts
   „Farben")
-- **Vorbedingungen:** AP-12; **OP-15 vor Beginn** (Abschnitt 2.1).
+- **Vorbedingungen:** AP-12; SM-NFR-015 ist durch die Entscheidung zu OP-15 verbindlich.
 - **Ergebnis:** Detailbereich gegliedert in Angaben, Größe, Farben und Optionen; Name, Thema,
   Beschreibung und Notizen bearbeitbar; freie Schlagworte, mehrere je Eintrag; Verschlagwortung
   über Mehrfachauswahl in einem Vorgang; die Schnittmusterfelder Designer, Kleidungstyp,
@@ -776,16 +770,16 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   mit diagonaler Stichschraffur, Garnname, Garnnummer in Festbreite, Stichanteil rechtsbündig.
   Möglich wird das durch SM-MET-010 und SM-FMT-010, die nach Abschnitt 1.2 nachgezogen sind; ohne
   sie bliebe SM-DES-008 als **Muss**-Anforderung dauerhaft teilweise unerfüllt.
-- **Zustände nach DES-STM-001 Abschnitt 10** (Abschnitt 4.2, Bezug OP-15): kein Eintrag ausgewählt
-  · Metadaten werden geladen · Feld nicht lesbar. Nachweis PF-OP15-02.
+- **Zustände nach DES-STM-001 Abschnitt 10** (SM-NFR-015): kein Eintrag ausgewählt · Metadaten
+  werden geladen · Feld nicht lesbar. Nachweis PF-NFR-15.2.
 - **Nachweis:** PF-DES-08, PF-MET-01, PF-MET-02, PF-MET-05, PF-MET-07, PF-MET-09, PF-MET-10,
-  PF-OP15-02, PF-PRV-07.2 (virtualisierte Farbliste); PF-DES-05.2 und PF-DES-06.2 aus der
+  PF-NFR-15.2, PF-PRV-07.2 (virtualisierte Farbliste); PF-DES-05.2 und PF-DES-06.2 aus der
   Mitwirkung (vollständige Dreiteilung mit
   befülltem Detailbereich).
   **Regressionslauf nach Abschnitt 4.2:** PF-NFR-07, PF-NFR-09, PF-NFR-13 (Kontrast, zweites
   Zustandsmerkmal, reduzierte Bewegung je neuem Element), PF-NFR-08.3 und PF-NFR-08.2
   (Erreichbarkeit und
-  Fokusring), PF-OP16-01 und PF-OP16-02 (Mindestgrößen und Zustandsbelegung), PF-SEC-08 (Fremdtext
+  Fokusring), PF-NFR-16.1 und PF-NFR-16.2 (Mindestgrößen und Zustandsbelegung), PF-SEC-08 (Fremdtext
   als Nur-Text), PF-SET-06 und PF-NFR-06 (deutschsprachig, verständliche Fehlertexte); Prüfpunkte
   D-03, D-04, D-06, D-11.
 - **Risiko:** Ein auszeichnungsfähiges Textelement an einer Stelle, an der Dateinamen oder
@@ -803,8 +797,7 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   des Programms), SM-SEC-001, SM-SEC-008, **SM-FMT-012 und SM-SEC-011** (deren Wortlaut „alle
   Formatparser" lautet — ob er die Anzeigekomponente erfasst, ist offen und als OP-14 geführt),
   **SM-NFR-005** (eine defekte Datei führt nicht zum Absturz — Unterfall PF-NFR-05.4)
-- **Vorbedingungen:** AP-12, AP-13; OP-14 für den Abnahmebezug der Härtung; **OP-15 vor Beginn**
-  (Abschnitt 2.1).
+- **Vorbedingungen:** AP-12, AP-13; OP-14 für den Abnahmebezug der Härtung.
 - **Ergebnis:** PDF-Schnittmuster als eigenständiger Eintragstyp; mehrere Dateien je Eintrag
   (Schnittmuster, Nähanleitung, Titelbild, Maßtabelle, Stoffbedarf), jede typisiert klassifiziert;
   Anzeige der Nähanleitung innerhalb der Anwendung ohne externes Programm. **Fehlerhafte oder
@@ -816,13 +809,13 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   Dokument mit eingebetteter Ressourcenreferenz darf sie nicht auslösen (SM-SEC-007, Unterfall
   PF-SEC-07.2); andernfalls bräche die Anzeige eines fremden Schnittmusters die Offline-Zusage
   AK-08.
-- **Zustände nach DES-STM-001 Abschnitt 10** (Abschnitt 4.2, Bezug OP-15): kein Dokument angehängt
-  · Dokument wird aufgebaut, ohne Layoutsprung · Dokument nicht lesbar. Nachweis PF-OP15-03.
+- **Zustände nach DES-STM-001 Abschnitt 10** (SM-NFR-015): kein Dokument angehängt · Dokument
+  wird aufgebaut, ohne Layoutsprung · Dokument nicht lesbar. Nachweis PF-NFR-15.3.
 - **Nachweis:** PF-DOC-01 bis PF-DOC-04; PF-NFR-07, PF-NFR-09 und PF-NFR-13 als
   Regressionslauf nach Abschnitt 4.2; AK-05. Dazu **PF-NFR-08.3** und **PF-NFR-08.2**
   (Erreichbarkeit und Fokusring der neu
   entstandenen Elemente sowie Fokusfang und Fokusrückgabe der neu entstandenen Dialoge),
-  **PF-OP16-01** und **PF-OP16-02** (Mindestgrößen und
+  **PF-NFR-16.1** und **PF-NFR-16.2** (Mindestgrößen und
   Zustandsbelegung), **PF-SEC-08** (Fremdtext als Nur-Text), **PF-SET-06** und **PF-NFR-06**
   (deutschsprachig, verständliche Fehlertexte) sowie die Prüfpunkte D-03, D-04, D-06 und D-11 — je
   Regressionslauf nach Abschnitt 4.2.
@@ -848,7 +841,7 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   könnte über eine eingebettete Ressourcenreferenz eine ausgehende Verbindung auslösen
   (SM-SEC-007, AK-08); **SM-NFR-005** (PF-NFR-05.4 — ein manipuliertes Dokument darf auch im
   Druckpfad nicht zum Absturz führen)
-- **Vorbedingungen:** AP-00 (Prototypnachweis), AP-14; **OP-15 vor Beginn** (Abschnitt 2.1).
+- **Vorbedingungen:** AP-00 (Prototypnachweis), AP-14.
 - **Ergebnis:** Druck aus der Anwendung ohne externes Programm; Druckvorschau, die dem Ausdruck
   entspricht; Wahl von Papierformat, Ausrichtung, Seitenbereich und Drucker; A4 und US Letter;
   maßhaltige Ausgabe; unbeabsichtigte Skalierung standardmäßig unterbunden; Warnung, sobald eine
@@ -856,16 +849,16 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
 - **Nicht in diesem Umfang:** Die Kachelung großformatiger Schnittmuster (SM-PRN-010) ist Soll und
   zurückgestellt. **Folge:** AK-06 prüft ausdrücklich den gekachelten A4-Druck und ist damit nur
   teilweise abnehmbar.
-- **Zustände nach DES-STM-001 Abschnitt 10** (Abschnitt 4.2, Bezug OP-15): kein Drucker verfügbar
-  · Druckvorschau wird aufgebaut · Vorschau nicht erzeugbar. Nachweis PF-OP15-04.
+- **Zustände nach DES-STM-001 Abschnitt 10** (SM-NFR-015): kein Drucker verfügbar ·
+  Druckvorschau wird aufgebaut · Vorschau nicht erzeugbar. Nachweis PF-NFR-15.4.
 - **Nachweis:** PF-PRN-01 bis PF-PRN-15 (Lücken für zurückgestellte Kennungen); AK-06 teilweise;
   Prüfpunkt D-12. **Der Erstnachweis der Maßhaltigkeit fällt in diesem Paket**, gemessen am
   körperlichen Ausdruck; AP-22 wiederholt ihn je Veröffentlichung auf allen drei Plattformen.
   Dazu PF-NFR-07, PF-NFR-09 und PF-NFR-13 als Regressionslauf nach Abschnitt 4.2. Dazu
   **PF-NFR-08.3** und **PF-NFR-08.2** (Erreichbarkeit und Fokusring der neu
   entstandenen Elemente sowie Fokusfang und Fokusrückgabe der neu entstandenen Dialoge),
-  **PF-OP16-01** und
-  **PF-OP16-02** (Mindestgrößen und Zustandsbelegung), **PF-SEC-08** (Fremdtext als Nur-Text),
+  **PF-NFR-16.1** und
+  **PF-NFR-16.2** (Mindestgrößen und Zustandsbelegung), **PF-SEC-08** (Fremdtext als Nur-Text),
   **PF-SET-06** und **PF-NFR-06** (deutschsprachig, verständliche Fehlertexte) sowie die
   Prüfpunkte D-03, D-04, D-06 und D-11 — je Regressionslauf nach Abschnitt 4.2.
 - **Risiko:** Das Ergebnis ist je Plattform und je Druckertreiber zu belegen. Ein Gate, das einen
@@ -880,8 +873,7 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   Bibliothek), **SM-NFR-005** (PF-NFR-05.3 — entfernter Datenträger, volllaufendes Ziel),
   SM-NFR-007, SM-NFR-009, SM-NFR-013 (Regressionslauf nach Abschnitt 4.2),
   SM-NFR-008, SM-SET-006, SM-NFR-006, SM-SEC-008 (Regressionslauf im Exportdialog)
-- **Vorbedingungen:** AP-06, AP-13, **AP-03**; OP-03 für den Abschluss; **OP-15 vor Beginn**
-  (Abschnitt 2.1).
+- **Vorbedingungen:** AP-06, AP-13, **AP-03**; OP-03 für den Abschluss.
 - **Ergebnis:** Konvertierung in ein wählbares Zielformat; Ausweis der für die gewählte Datei
   verfügbaren Zielformate; Erkennung angeschlossener Wechseldatenträger als Exportziel; Prüfung
   von freiem Speicherplatz und Schreibrechten vor dem Kopieren; Überschreiben, Umbenennen oder
@@ -889,19 +881,19 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   Zielpfad wird gegen das Exportziel kanonisiert und eingegrenzt; aus Fremddaten gebildete
   Dateinamen sind bereinigt.** **Fortschritt des Kopiervorgangs in der Statusleiste mit Abbruch**,
   wie bei Import und Stapelvorgang (DES-STM-001 Abschnitt 10) — auch der Abbruch eines Exports
-  trägt keine eigene Kennung und ist über **OP-15** geführt, Prüffall `PF-OP15-10`. Ein während
+  trägt SM-NFR-015 und wird in `PF-NFR-15.10` geprüft. Ein während
   des Kopierens entferntes oder volllaufendes Ziel führt zu einer verständlichen Meldung, nicht
   zum Absturz. **Rechte Statusleistengruppe nach DES-STM-001 Abschnitt 6.5:** Datenträgerstatus
   mit Kreuzstichmarke in `--kn-ok`, sobald ein Datenträger verbunden ist, und Bibliotheksstatus.
   Ohne diesen Bauort hätte die Gruppe keinen — AP-12 baut die Statusleiste nur mit Bestand,
   Treffer und Auswahl, und Prüfpunkt D-11 könnte diesen Teil dort nur leer bestehen.
-- **Zustände nach DES-STM-001 Abschnitt 10** (Abschnitt 4.2, Bezug OP-15): kein Datenträger
-  angeschlossen · Datenträger wird gelesen · Datenträger nicht beschreibbar. Nachweis PF-OP15-05.
+- **Zustände nach DES-STM-001 Abschnitt 10** (SM-NFR-015): kein Datenträger angeschlossen ·
+  Datenträger wird gelesen · Datenträger nicht beschreibbar. Nachweis PF-NFR-15.5.
 - **Nachweis:** PF-EXP-01, PF-EXP-03 bis PF-EXP-05, PF-EXP-06.1 bis PF-EXP-06.3, PF-EXP-07;
-  PF-OP15-05, PF-OP15-10; PF-NFR-07, PF-NFR-09 und PF-NFR-13 als Regressionslauf nach
+  PF-NFR-15.5, PF-NFR-15.10; PF-NFR-07, PF-NFR-09 und PF-NFR-13 als Regressionslauf nach
   Abschnitt 4.2; Dazu **PF-NFR-08.3** und **PF-NFR-08.2** (Erreichbarkeit und Fokusring der neu
   entstandenen Elemente sowie Fokusfang und Fokusrückgabe der neu entstandenen Dialoge),
-  **PF-OP16-01** und **PF-OP16-02** (Mindestgrößen und Zustandsbelegung), **PF-SEC-08**
+  **PF-NFR-16.1** und **PF-NFR-16.2** (Mindestgrößen und Zustandsbelegung), **PF-SEC-08**
   (Fremdtext als Nur-Text), **PF-SET-06** und **PF-NFR-06** (deutschsprachig, verständliche
   Fehlertexte) sowie die Prüfpunkte D-03, D-04, D-06 und D-11 — je Regressionslauf nach Abschnitt
   4.2. **Prüfpunkt D-11 als Regressionsnachweis** für die rechte
@@ -922,18 +914,18 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   **SM-SEC-008** (Regressionslauf — die Zielnamen der Stapelvorschau sind aus Metadaten gebildet,
   also Fremdtext), SM-NFR-007, SM-NFR-009, SM-NFR-013 (Regressionslauf nach Abschnitt 4.2),
   SM-NFR-008, SM-SET-006, SM-NFR-006 (Regressionslauf in der Stapelvorschau)
-- **Vorbedingungen:** AP-13, **AP-03**; **OP-15 vor Beginn** (Abschnitt 2.1).
+- **Vorbedingungen:** AP-13, **AP-03**.
 - **Ergebnis:** Mehrfachauswahl in der Musterauswahl; stapelweises Umbenennen nach
   konfigurierbaren Namensmustern mit mindestens den Variablen Name, Thema, Format und laufender
   Nummer; Vorschau der Änderungen vor der Ausführung; **Fortschritt in der Statusleiste mit
   Abbruchmöglichkeit**; kein halb geänderter Zustand nach Abbruch, bereits ausgeführte
   Einzelvorgänge im Protokoll ausgewiesen. **Aus Metadaten gebildete Zielnamen werden bereinigt,
   bevor sie ein Dateisystem berühren.**
-- **Zustände nach DES-STM-001 Abschnitt 10** (Abschnitt 4.2, Bezug OP-15): keine Auswahl getroffen
-  · Vorschau wird berechnet · Vorschau nicht erzeugbar. Nachweis PF-OP15-06.
+- **Zustände nach DES-STM-001 Abschnitt 10** (SM-NFR-015): keine Auswahl getroffen · Vorschau
+  wird berechnet · Vorschau nicht erzeugbar. Nachweis PF-NFR-15.6.
 - **Nachweis:** PF-BAT-01, PF-BAT-02, PF-BAT-04, PF-BAT-05, PF-BAT-07; PF-NFR-07, PF-NFR-09
   und PF-NFR-13 als Regressionslauf nach Abschnitt 4.2. Dazu **PF-NFR-08.1** (Erreichbarkeit und
-  Fokusring der neu entstandenen Elemente), **PF-OP16-01** und **PF-OP16-02** (Mindestgrößen und
+  Fokusring der neu entstandenen Elemente), **PF-NFR-16.1** und **PF-NFR-16.2** (Mindestgrößen und
   Zustandsbelegung), **PF-SEC-08** (Fremdtext als Nur-Text), **PF-SET-06** und **PF-NFR-06**
   (deutschsprachig, verständliche Fehlertexte) sowie die Prüfpunkte D-03, D-04, D-06 und D-11 — je
   Regressionslauf nach Abschnitt 4.2.
@@ -952,7 +944,7 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   (Regressionslauf nach Abschnitt 4.2),
   SM-NFR-008, SM-SET-006, SM-NFR-006 (Regressionslauf
   in den Bestätigungsdialogen); AP-11 liefert die Marken der Kennzeichnung
-- **Vorbedingungen:** AP-13; **OP-15 und OP-20 vor Beginn** (Abschnitt 2.1); OP-05 für den
+- **Vorbedingungen:** AP-13; **OP-20 vor Beginn** (Abschnitt 2.1); OP-05 für den
   Abschluss.
 - **Ergebnis:** Lokale Verarbeitung, die aus dem Vorschaubild Metadatenvorschläge erzeugt — Name,
   Thema, Beschreibung, Schlagworte, Farben (SM-KIA-001, nach Abschnitt 1.2 nachgezogen); Funktion
@@ -966,14 +958,14 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   Bestätigung gekennzeichnet; Zugangsschlüssel ausschließlich im Schlüsselspeicher des
   Betriebssystems; ausgehende Verbindungen begrenzt und vollständig abschaltbar; verständliche
   Meldung bei Ausfall, alle übrigen Funktionen bleiben nutzbar.
-- **Zustände nach DES-STM-001 Abschnitt 10** (Abschnitt 4.2, Bezug OP-15): Analyse nicht aktiviert
-  · Analyse läuft · Analyse ohne Ergebnis oder fehlgeschlagen. Nachweis PF-OP15-07.
+- **Zustände nach DES-STM-001 Abschnitt 10** (SM-NFR-015): Analyse nicht aktiviert · Analyse
+  läuft · Analyse ohne Ergebnis oder fehlgeschlagen. Nachweis PF-NFR-15.7.
 - **Nachweis:** PF-KIA-01, PF-KIA-02, PF-KIA-04, PF-KIA-05, PF-KIA-07, PF-KIA-08, PF-KIA-10,
-  PF-KIA-11, PF-SEC-06, PF-SEC-07.1, PF-DES-09, PF-OP15-07, PF-OP20-01;
+  PF-KIA-11, PF-SEC-06, PF-SEC-07.1, PF-DES-09, PF-NFR-15.7, PF-OP20-01;
   PF-NFR-07, PF-NFR-09 und PF-NFR-13 als Regressionslauf nach Abschnitt 4.2; AK-08 teilweise,
   AK-09; Dazu **PF-NFR-08.3** und **PF-NFR-08.2** (Erreichbarkeit und Fokusring der neu
   entstandenen Elemente sowie Fokusfang und Fokusrückgabe der neu entstandenen Dialoge),
-  **PF-OP16-01** und **PF-OP16-02** (Mindestgrößen und Zustandsbelegung), **PF-SEC-08** (Fremdtext
+  **PF-NFR-16.1** und **PF-NFR-16.2** (Mindestgrößen und Zustandsbelegung), **PF-SEC-08** (Fremdtext
   als Nur-Text), **PF-SET-06** und **PF-NFR-06** (deutschsprachig, verständliche Fehlertexte)
   sowie die Prüfpunkte D-03, D-04, D-06 und D-11 — je Regressionslauf nach Abschnitt 4.2.
   Prüfpunkt D-08.
@@ -1148,7 +1140,9 @@ nicht führen kann:
 | SM-SEC-011 | PF-SEC-11.1, .2, .3 | Fuzzing-Ziel je Stickformatparser (AP-06) · Fuzzing-Ziel für den Dokumentpfad (AP-14) · Fuzzing-Ziel für den Wiederherstellungspfad (AP-04) |
 | SM-PRV-007 | PF-PRV-07.1, .2 | Kachelraster virtualisiert (AP-12) · Farbliste im Detailbereich virtualisiert (AP-13) |
 | SM-LIB-001 | PF-LIB-01.1, .2 | Bibliothekswurzel kernseitig setzen und lesen (AP-07) · Bedienweg dorthin aus der Werkzeugleiste (AP-12) |
-| SM-SET-002 | PF-SET-02.1, .2 | Übernahme der Systemeinstellung (AP-11) · manuelle Übersteuerung über den Bedienweg (AP-12) |
+| SM-SET-002 | PF-SET-02.1, .2, .3 | Übernahme der Systemeinstellung (AP-11) · manuelle Übersteuerung über den Bedienweg (AP-12) · Fortbestehen über Neustart (AP-12) |
+| SM-NFR-015 | PF-NFR-15.1 bis .10 | Zustandstrios der Oberflächen · konsistenter Abbruch von Import und Export |
+| SM-NFR-016 | PF-NFR-16.1 bis .3 | Mindestgrößen · Zustandsbelegung · Trefferzone der Trenner |
 | SM-SET-001 | PF-SET-01.1, .2 | Themenwerte für beide Modi vorhanden (AP-11) · Umschalter zur Laufzeit auf allen Bildschirmen (AP-12) |
 | SM-DAT-001 | PF-DAT-01.1, .2 | Sichern und Wiederherstellen als Kerndienst (AP-04) · Bedienweg dorthin in der Oberfläche (AP-12) |
 | SM-IMP-005 | PF-IMP-05.1, .2 | Erkennung über den Inhaltshash (AP-08) · Entscheidungsvorlage auf dem Dialoggerüst (AP-12) |
@@ -1158,28 +1152,28 @@ nicht führen kann:
 | SM-SEC-005 | PF-SEC-05.1, .2 | parametrisierte Abfragen der Datenhaltung (AP-04) · Quotierung des Volltextausdrucks im Suchpfad (AP-10) |
 | SM-DES-005, SM-DES-006 | PF-DES-05.1/.2, PF-DES-06.1/.2 | Rahmen, Trenner und Spaltenbreiten (AP-12) · vollständige Dreiteilung mit befülltem Detailbereich (AP-13) |
 
-**Prüffälle ohne Anforderungskennung.** Für die Leistungen aus OP-15 bis OP-17, OP-19 und OP-20 gibt
-es keine Kennung im Lastenheft; ihre Prüffälle tragen deshalb eigene, **vorläufige** Nummern und
-stehen nicht in der Matrix (Abschnitt 4.2 und Kapitel 7):
+**Nach der Entscheidung nachgezogene Unterfälle.** URS-STM-001 v1.4 bindet die früher
+vorläufigen Fälle aus OP-15 bis OP-17 und OP-19 an Anforderungen. Nur PF-OP20-01 bleibt bis zur
+Entscheidung von OP-20 ohne Anforderungskennung:
 
 | Prüffall | Gegenstand | Paket |
 |---|---|---|
-| `PF-OP15-01` | Leerzustand und Trefferlosigkeit der Musterauswahl | AP-12 |
-| `PF-OP15-02` | Zustandstrio des Detailbereichs | AP-13 |
-| `PF-OP15-03` | Zustandstrio der Dokumentanzeige | AP-14 |
-| `PF-OP15-04` | Zustandstrio der Druckvorschau | AP-15 |
-| `PF-OP15-05` | Zustandstrio des Exportdialogs | AP-16 |
-| `PF-OP15-06` | Zustandstrio der Stapelvorschau | AP-17 |
-| `PF-OP15-07` | Zustandstrio der Analyse | AP-18 |
-| `PF-OP15-08` | Zustandstrio der Navigationsspalte: keine Bibliothekswurzel gesetzt · Ordnerbaum und Übersichtskarte im Aufbau · Wurzelverzeichnis nicht lesbar | AP-12 |
-| `PF-OP15-09` | Abbruch eines laufenden Imports über die Statusleiste; danach ist der Bestand konsistent und der Lauf wiederholbar | AP-12 |
-| `PF-OP15-10` | Abbruch eines laufenden Exports über die Statusleiste. **Bedingung binär:** Nach dem Abbruch enthält das Ziel keine unvollständige Datei — die angefangene Zieldatei ist entfernt, bereits vollständig kopierte bleiben erhalten, und das Protokoll weist beide Mengen aus | AP-16 |
-| `PF-OP19-01` | Die manuelle Übersteuerung der Darstellungsart übersteht den Neustart | AP-12 |
+| `PF-NFR-15.1` | Leerzustand und Trefferlosigkeit der Musterauswahl | AP-12 |
+| `PF-NFR-15.2` | Zustandstrio des Detailbereichs | AP-13 |
+| `PF-NFR-15.3` | Zustandstrio der Dokumentanzeige | AP-14 |
+| `PF-NFR-15.4` | Zustandstrio der Druckvorschau | AP-15 |
+| `PF-NFR-15.5` | Zustandstrio des Exportdialogs | AP-16 |
+| `PF-NFR-15.6` | Zustandstrio der Stapelvorschau | AP-17 |
+| `PF-NFR-15.7` | Zustandstrio der Analyse | AP-18 |
+| `PF-NFR-15.8` | Zustandstrio der Navigationsspalte: keine Bibliothekswurzel gesetzt · Ordnerbaum und Übersichtskarte im Aufbau · Wurzelverzeichnis nicht lesbar | AP-12 |
+| `PF-NFR-15.9` | Abbruch eines laufenden Imports über die Statusleiste; danach ist der Bestand konsistent und der Lauf wiederholbar | AP-12 |
+| `PF-NFR-15.10` | Abbruch eines laufenden Exports über die Statusleiste. **Bedingung binär:** Nach dem Abbruch enthält das Ziel keine unvollständige Datei — die angefangene Zieldatei ist entfernt, bereits vollständig kopierte bleiben erhalten, und das Protokoll weist beide Mengen aus | AP-16 |
+| `PF-SET-02.3` | Die manuelle Übersteuerung der Darstellungsart übersteht den Neustart | AP-12 |
 | `PF-OP20-01` | Sammelaktionen der Hinweisbox: alle Vorschläge übernehmen bzw. verwerfen | AP-18 |
-| `PF-OP17-01` | Übersichtskarte zeigt Gesamtbestand als Festbreitenzahl und Formatverteilung als Balken mit Legende (DES-STM-001 Abschnitt 6.2) | AP-12 |
-| `PF-OP16-01` | Mindestgrößen der Bedienelemente nach DES-STM-001 Abschnitt 7, gegen die Bezeichner der Variablenquelle geprüft — nicht gegen im Plan wiederholte Zahlen | AP-12 |
-| `PF-OP16-02` | Zustandsbelegung je Komponente nach DES-STM-001 Abschnitt 7, in beiden Modi | AP-12 |
-| `PF-OP16-03` | Treffbarkeit der Trenner. **Das Maß steht noch nicht fest:** DES-STM-001 nennt in Abschnitt 5 mindestens 6 px Ziehfläche, in Abschnitt 7 mindestens 32 × 32 px Trefferfläche für Bedienelemente. Welches gilt, entscheidet **OP-16**; bis dahin wird gemessen und protokolliert, nicht bestanden | AP-12 |
+| `PF-LIB-11` | Übersichtskarte zeigt Gesamtbestand als Festbreitenzahl und Formatverteilung als Balken mit Legende (DES-STM-001 Abschnitt 6.2) | AP-12 |
+| `PF-NFR-16.1` | Mindestgrößen der Bedienelemente nach DES-STM-001 Abschnitt 7, gegen die Bezeichner der Variablenquelle geprüft | AP-12 |
+| `PF-NFR-16.2` | Zustandsbelegung je Komponente nach DES-STM-001 Abschnitt 7, in beiden Modi | AP-12 |
+| `PF-NFR-16.3` | Trenner: 1 px sichtbare Linie, mindestens 6 px Ziehfläche und 32 px breite unsichtbare Trefferzone | AP-12 |
 
 Wie bei den Anforderungskennungen gilt: Prüffallkennungen werden **nicht wiederverwendet**.
 Entfällt ein Prüffall, bleibt die Kennung mit Streichgrund stehen.
@@ -1187,13 +1181,13 @@ Entfällt ein Prüffall, bleibt die Kennung mit Streichgrund stehen.
 ### 6.2 Methodenverteilung
 
 Die Prüfmethode je Anforderung ist im Lastenheft festgelegt und wird hier nicht neu bestimmt. Über
-die 137 verplanten Anforderungen:
+die 140 verplanten Anforderungen:
 
 | Methode | Anzahl | Wer erbringt sie |
 |---|---|---|
 | **T** — Test | 63 | automatisiert, Teil der Prüfkette, läuft je Commit |
 | **I** — Inspektion | 37 | teils automatisierbar (Projektregeln, Literalprüfung, Abfrageform), teils Sichtprüfung im Review |
-| **D** — Demonstration | 28 | Vorführung am laufenden System, je Meilenstein |
+| **D** — Demonstration | 31 | Vorführung am laufenden System, je Meilenstein |
 | **A** — Analyse | 9 | Messung mit protokolliertem Gerät, Datenbestand und Bedingungen |
 
 **Die Reviewer messen nicht.** Kontrastwerte, Laufzeiten und Druckmaße werden von
@@ -1274,11 +1268,9 @@ Erfüllt URS-STM-001 Abschnitt 13.3. Eine Zeile je verplanter Anforderung, jede 
 Arbeitspaket zugeordnet; Mitwirkungen nach Abschnitt 1.4 erscheinen hier nicht. Wo eine
 Anforderung mehrere Prüffälle trägt (Abschnitt 6.1), nennt die Spalte alle.
 
-**Nicht in dieser Matrix:** die vorläufigen Prüffälle `PF-OP15-01` bis `PF-OP15-10` und
-`PF-OP16-01` bis `PF-OP16-03`, `PF-OP17-01`, `PF-OP19-01` und `PF-OP20-01`. Sie gehören zu
-Leistungen, für die
-im Lastenheft keine Kennung existiert (Abschnitt 4.2); sie stehen dort und in Abschnitt 6.1, nicht
-hier — eine Matrixzeile ohne Anforderung wäre ein Widerspruch in sich.
+**Nicht in dieser Matrix:** allein der vorläufige Prüffall `PF-OP20-01`, weil OP-20 noch keine
+Anforderungskennung besitzt. Die früheren OP-15-, OP-16-, OP-17- und OP-19-Fälle sind in
+URS-STM-001 v1.4 Anforderungen zugeordnet und erscheinen deshalb regulär in der Matrix.
 
 **Abweichung vom Schema des Lastenhefts, bewusst und nachzutragen:** Abschnitt 13.3 sieht die
 Spalte *Spezifikation* (Abschnitt im Pflichtenheft) vor. Das Pflichtenheft steht aus (Abschnitt
@@ -1303,6 +1295,7 @@ Eintrag nennt den ausgeführten Regellauf; ausgesetzte Fälle werden nicht als b
 | SM-LIB-004 | M | T | AP-07 | `kern/services` | PF-LIB-04 | offen |
 | SM-LIB-009 | M | A | AP-07 | `kern/services` | PF-LIB-09 | offen |
 | SM-LIB-010 | M | T | AP-04 | `kern/db` | PF-LIB-10 | bestanden — `cargo test -p kern-db` (29.08.2026: 25 bestanden; Kennungsfälle enthalten) |
+| SM-LIB-011 | M | D | AP-12 | `ui/navigation` | PF-LIB-11 | offen |
 | SM-IMP-001 | M | T | AP-08 | `kern/services` | PF-IMP-01 | bestanden — `cargo test -p kern-services pf_mig_05_import_veraendert_keine_quelldatei` (29.08.2026: 1 bestanden) |
 | SM-IMP-002 | M | D | AP-12 | `ui/fenster · kern/services` | PF-IMP-02 | offen |
 | SM-IMP-003 | M | T | AP-08 | `kern/services` | PF-IMP-03 | bestanden — `cargo test -p kern-fassade -p kern-services` (29.08.2026: 29 + 18 bestanden; Änderungsfälle enthalten) |
@@ -1374,7 +1367,7 @@ Eintrag nennt den ausgeführten Regellauf; ausgesetzte Fälle werden nicht als b
 | SM-DAT-007 | M | I | AP-04 | `kern/db` | PF-DAT-07 | bestanden — `cargo test -p kern-db` (29.08.2026: 25 bestanden; Migrationsprüfsummen und Wiederholung enthalten) |
 | SM-DAT-008 | M | T | AP-04 | `kern/db` | PF-DAT-08 | offen |
 | SM-SET-001 | M | D | AP-11 | `ui/gestaltung · ui/auswahl` | PF-SET-01.1, .2 | offen |
-| SM-SET-002 | S¹ | T | AP-11 | `ui/gestaltung · ui/fenster` | PF-SET-02.1, .2 | offen |
+| SM-SET-002 | S¹ | T | AP-11 | `ui/gestaltung · ui/fenster` | PF-SET-02.1, .2, .3 | offen |
 | SM-SET-003 | S¹ | T | AP-11 | `ui/gestaltung` | PF-SET-03 | offen |
 | SM-SET-004 | S¹ | D | AP-11 | `ui/gestaltung` | PF-SET-04.1, .2 | offen |
 | SM-SET-006 | M | I | AP-12 | `ui (durchgehend)` | PF-SET-06 | offen |
@@ -1396,6 +1389,8 @@ Eintrag nennt den ausgeführten Regellauf; ausgesetzte Fälle werden nicht als b
 | SM-NFR-012 | M | I | AP-02 | `bau · pruef` | PF-NFR-12 | offen |
 | SM-NFR-013 | S¹ | D | AP-11 | `ui/gestaltung` | PF-NFR-13 | offen |
 | SM-NFR-014 | M | I | AP-21 | `bau` | PF-NFR-14 | offen |
+| SM-NFR-015 | M | D | AP-12 | `ui (durchgehend) · kern/services` | PF-NFR-15.1, .2, .3, .4, .5, .6, .7, .8, .9, .10 | offen |
+| SM-NFR-016 | M | D | AP-12 | `ui (durchgehend)` | PF-NFR-16.1 bis .3 | offen |
 | SM-SEC-001 | M | T | AP-03 | `kern/security` | PF-SEC-01 | offen |
 | SM-SEC-002 | M | T | AP-03 | `kern/security` | PF-SEC-02 | offen |
 | SM-SEC-003 | M | T | AP-03 | `kern/security` | PF-SEC-03 | offen |
@@ -1435,19 +1430,19 @@ Eintrag nennt den ausgeführten Regellauf; ausgesetzte Fälle werden nicht als b
 | SM-DES-008 | M | D | AP-13 | `ui/detail` | PF-DES-08 | offen |
 | SM-DES-009 | M | I | AP-18 | `ui/detail · ui/auswahl` | PF-DES-09 | offen |
 
-**Abgleich.** 137 Zeilen: alle 126 Muss-Anforderungen des Lastenhefts und die elf nachgezogenen
+**Abgleich.** 140 Zeilen: alle 129 Muss-Anforderungen des Lastenhefts und die elf nachgezogenen
 Soll-Anforderungen. Keine Kennung doppelt, keine Muss-Anforderung ohne Arbeitspaket, keine
 Prüffallkennung doppelt. Die Zuordnungsspalte ist aus den Zuordnungslisten in Kapitel 4 erzeugt,
 nicht daneben gepflegt — beide können nicht auseinanderlaufen.
 
 ### 7.1 Ist-Abgleich vom 29.08.2026
 
-Alle 137 Zeilen wurden gegen den Quellstand und den Regellauf
+Alle 140 Zeilen wurden gegen den Quellstand und den Regellauf
 `cargo test -p kern-db -p kern-fassade -p kern-render -p kern-services --all-targets`
 abgeglichen. Ergebnis: 93 bestanden, 0 fehlgeschlagen, 2 als Messfälle ausgesetzt. Die beiden
 ausgesetzten 100.000-Einträge-Fälle bleiben Regressionsmessungen und begründen wegen OP-08
 keinen Statuswechsel. Acht Anforderungen besitzen jetzt einen vollständigen, ausgeführten
-Erstnachweis; 129 bleiben `offen`. Komponenten- und Teiltests werden dabei nicht als Abnahme
+Erstnachweis; 132 bleiben `offen`. Komponenten- und Teiltests werden dabei nicht als Abnahme
 einer umfassenderen Anforderung gezählt.
 
 | Arbeitspaket | Zeilen | bestanden | Grund für verbleibende offene Zeilen |
@@ -1462,8 +1457,8 @@ einer umfassenderen Anforderung gezählt.
 | AP-08 | 6 | 3 | PF-IMP-01, PF-IMP-03 und PF-IMP-09 bestehen; Duplikatentscheidung sowie vollständige Hintergrund- und Fehlerzweige fehlen |
 | AP-09 | 3 | 1 | PF-PRV-03 besteht; visuelle Vorschauabnahme und durch OP-21/PV-09 offene Speichergrenze fehlen |
 | AP-10 | 7 | 0 | Filter- und Sortierumfang ist unvollständig; die beiden ausgesetzt laufenden Messfälle bleiben Regressionswerte |
-| AP-11 | 12 | 0 | offene UI-Entscheidungen und Demonstrations-/Inspektionsnachweise sperren den Abschluss |
-| AP-12 | 14 | 0 | Oberfläche ist nur teilweise umgesetzt; Demonstrationen und Messungen fehlen |
+| AP-11 | 12 | 0 | Gestaltungsnachweise fehlen; Farbwerte bleiben bis zum Markenabgleich vorläufig |
+| AP-12 | 17 | 0 | Oberfläche ist nur teilweise umgesetzt; Demonstrationen und Messungen fehlen |
 | AP-13 | 7 | 0 | Detailanzeige und Metadatenbearbeitung fehlen |
 | AP-14 | 4 | 0 | Dokumentpfad fehlt |
 | AP-15 | 10 | 0 | Druckpfad und körperliche Messung fehlen |
@@ -1584,15 +1579,15 @@ Lastenhefts URS-STM-001. Ihre Zuordnung zu den Arbeitspaketen und die Gatterrege
 Kapitel 2.
 
 **OP-14** bis **OP-21** — acht Punkte — sind bei der Prüfung dieses Plans entstanden und dort
-aufgenommen worden, nicht hier: Der Plan darf keine Anforderung begründen und keine einschränken
-(Abschnitt 0.1). Sie zerfallen in vier Gruppen, ohne Überschneidung:
+aufgenommen worden, nicht hier. Vier davon sind in URS-STM-001 v1.4 entschieden und in
+Anforderungen überführt oder präzisiert; vier bleiben offen:
 
 | Gruppe | Punkte |
 |---|---|
-| Verhalten, das DES-STM-001 verbindlich beschreibt, ohne Kennung im Lastenheft | OP-15, OP-16, OP-17, OP-20 |
+| Verhalten, das DES-STM-001 verbindlich beschreibt, ohne Kennung im Lastenheft | OP-20 offen; OP-15 bis OP-17 entschieden |
 | Reichweite eines vorhandenen Anforderungstextes | OP-14 (Geltung von SM-FMT-012 und SM-SEC-011 für die Anzeige von Fremddokumenten), OP-21 (deckt SM-PRV-002 auch eine Schranke des Zwischenspeichers?) |
 | Messanforderung ohne Schwellenwert | OP-18 |
-| Zusage, die zwischen zwei bestehende Kennungen fällt | OP-19 |
+| Zusage, die zwischen zwei bestehende Kennungen fiel | OP-19 entschieden und in SM-SET-002 präzisiert |
 
 Ergibt sich bei der Umsetzung ein weiterer offener Punkt, wird er ebenso **dort** aufgenommen und
 hier nur referenziert. Ein zweites Register wäre der sichere Weg zu zwei Ständen derselben Frage.
@@ -1612,7 +1607,7 @@ Ebene verortet wurde. Jede Vormerkung nennt, **was** festzulegen ist und **woran
 | **PV-03** | Schwellenwerte für Eingabelatenz und Entprellintervall, sobald **OP-18** beantwortet ist | PF-NFR-02.2, PF-SRC-08 | Leistungsprüfung Runde 3 |
 | **PV-04** | Signatur und Verhalten der Fassadenschnittstelle im Einzelnen: Form der ausschnittweisen Lieferung, Fehlerbilder, Validierungsregeln je Aufruf | SM-SEC-004, Schnittregel 3 | Leistungs- und Sicherheitsprüfung Runde 4 |
 | **PV-05** | Aufbau des Prüfbestands manipulierter Stick- und Dokumentdateien: Herkunft, Mutationsverfahren, Abdeckungsziel des Fuzzings | PF-FMT-12, PF-SEC-11.1, PF-SEC-11.2 | Sicherheitsprüfung Runde 2 |
-| **PV-06** | Wortlaut des Ersatztexts für den Zustand „Datei nicht auffindbar", solange SM-EXP-010 zurückgestellt ist | PF-NFR-06, `PF-OP15-01` | Design-Prüfung Runde 5 |
+| **PV-06** | Wortlaut des Ersatztexts für den Zustand „Datei nicht auffindbar", solange SM-EXP-010 zurückgestellt ist | PF-NFR-06, `PF-NFR-15.1` | Design-Prüfung Runde 5 |
 | **PV-07** | Form des Ausschnittabrufs an der Fassade: Cursor oder Versatz, samt Begründung der Wahl | Schnittregel 3, PF-PRV-07.1, PF-SRC-07 | Leistungsprüfung Runde 5 |
 | **PV-08** | Berechtigungsumfang des Flatpak-Manifests, solange SM-SEC-015 zurückgestellt ist | SM-SEC-009, SM-SEC-014, PF-PLT-04 | Design-Prüfung Runde 7 |
 | **PV-09** | Obergrenze der Zwischenspeicherbelegung und Verdrängungsverfahren — Zahlenwert und Verfahren; der Plan legt allein die Bestehbedingung fest (Abschnitt 0.3) | SM-PRV-002, SM-NFR-001, PF-PRV-02 | Leistungsprüfung Runde 13 |
@@ -1627,4 +1622,5 @@ geführt, nicht als bestanden (Abschnitt 6.4).
 
 | Version | Datum | Änderung |
 |---|---|---|
+| 1.1 | 29.08.2026 | URS-STM-001 v1.4 und DES-STM-001 v1.4 nachgezogen. OP-13 und Weg A bestätigt; OP-07, OP-09, OP-15 bis OP-17 und OP-19 entschieden. Neu verplant: SM-LIB-011, SM-NFR-015 und SM-NFR-016 in AP-12; SM-SET-002 um PF-SET-02.3 ergänzt. Umfang auf 140 Anforderungen (129 Muss und elf nachgezogene Soll) fortgeschrieben; vorläufige OP-Prüffälle in reguläre PF-LIB-, PF-NFR- und PF-SET-Kennungen überführt. Rückverfolgbarkeitsmatrix und Paketabgleich aktualisiert. Nachweis: `Analysis/20260829_01_sprintplanung.md`. |
 | 1.0 | 24.08.2026 | Erstfassung. Abgeleitet aus URS-STM-001 v1.3, DES-STM-001 v1.3 und TEC-STM-001 v2.2. Verplant 137 Anforderungen — alle 126 Muss und elf nachgezogene Soll (SM-KIA-001, SM-SRC-009, SM-BAT-005, SM-NFR-009, SM-NFR-013, SM-SEC-010, SM-FMT-010, SM-MET-010, SM-SET-002, SM-SET-003, SM-SET-004) — in 23 Arbeitspaketen und acht Meilensteinen; Rückverfolgbarkeitsmatrix nach URS-STM-001 Abschnitt 13.3; Entscheidungsgatter für die offenen Punkte, ohne einen davon zu entscheiden. Die übrigen 68 Soll- und 17 Kann-Anforderungen sind begründet zurückgestellt. Herleitung: `Analysis/20260823_03_implementierungsplan.md`. |

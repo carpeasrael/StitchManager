@@ -4,8 +4,8 @@
 |---|---|
 | **Dokument** | Lastenheft StitchManager |
 | **Kennung** | URS-STM-001 |
-| **Version** | 1.3 |
-| **Datum** | 24.08.2026 |
+| **Version** | 1.4 |
+| **Datum** | 29.08.2026 |
 | **Status** | Entwurf — zur Prüfung und Freigabe |
 | **Ersetzt** | — |
 
@@ -42,12 +42,12 @@ begründen und zu dokumentieren. **Kann**-Anforderungen sind Ausbaustufen ohne Z
 
 | Kennung | Dokument | Inhalt |
 |---|---|---|
-| DES-STM-001 v1.3 | StitchManager_Design_Beschreibung.md | Verbindliche Gestaltungsvorgaben, Farbvariablen, Komponentenverhalten. Konkretisiert Kapitel 12 dieses Dokuments. |
-| TEC-STM-001 v2.2 | StitchManager_TechStack.md | Technologieentscheidung und Auslieferungswege. Löst die Anforderungen dieses Dokuments technisch auf. |
+| DES-STM-001 v1.4 | StitchManager_Design_Beschreibung.md | Verbindliche Gestaltungsvorgaben, Farbvariablen, Komponentenverhalten. Konkretisiert Kapitel 12 dieses Dokuments. |
+| TEC-STM-001 v2.3 | StitchManager_TechStack.md | Technologieentscheidung und Auslieferungswege. Löst die Anforderungen dieses Dokuments technisch auf. |
 | ANA-STM-001 v1.1 | StitchManager_Requirements_konsolidiert.md | Herleitung aus drei Vorgängerständen. **Nur Herleitung, keine Anforderungsquelle.** Die dortigen Befunde B-01 bis B-13 sind keine Anforderungen dieses Dokuments. |
 | ABG-STM-001 | StitchManager_Abstimmungsprotokoll.md | Nachweis der Abstimmung der drei Dokumente |
 | — | stitchmanager-mockup.html | Visuelle Referenz des Hauptfensters |
-| IMP-STM-001 v1.0 | StitchManager_Implementierungsplan.md | Zuordnung der Anforderungen zu Arbeitspaketen und Prüffällen. **Nachgeordnet — begründet und beschränkt keine Anforderung.** |
+| IMP-STM-001 v1.1 | StitchManager_Implementierungsplan.md | Zuordnung der Anforderungen zu Arbeitspaketen und Prüffällen. **Nachgeordnet — begründet und beschränkt keine Anforderung.** |
 
 **Dokumentenhierarchie:** Dieses Lastenheft ist führend. Bei Widersprüchen gilt es vor
 DES-STM-001 und TEC-STM-001. Keines der beiden nachgeordneten Dokumente darf eine Anforderung
@@ -194,6 +194,7 @@ laufenden System) · `I` Inspektion (Sichtprüfung von Ergebnis, Code oder Konfi
 | SM-LIB-008 | Das System muss leere Ordner erkennen und deren Bereinigung anbieten. | K | D |
 | SM-LIB-009 | Das System muss mindestens 100.000 Einträge ohne Funktionsverlust verwalten. | M | A |
 | SM-LIB-010 | Das System muss jedem Eintrag eine dauerhafte, eindeutige interne Kennung zuweisen, die bei Umbenennung oder Verschiebung erhalten bleibt. | M | T |
+| SM-LIB-011 | Die Navigationsspalte muss eine Übersichtskarte mit dem Gesamtbestand als Zahl und der Formatverteilung als Balken mit Legende anzeigen. | M | D |
 
 ### 6.2 Import und Erfassung (IMP)
 
@@ -410,7 +411,7 @@ laufenden System) · `I` Inspektion (Sichtprüfung von Ergebnis, Code oder Konfi
 | ID | Anforderung | Prio | Prüf |
 |---|---|---|---|
 | SM-SET-001 | Das System muss einen Hell- und einen Dunkelmodus bieten. | M | D |
-| SM-SET-002 | Das System muss die Systemeinstellung übernehmen können, mit manueller Übersteuerung. | S | T |
+| SM-SET-002 | Das System muss die Systemeinstellung übernehmen können, mit manueller Übersteuerung; die manuelle Wahl muss einen Neustart überstehen. | S | T |
 | SM-SET-003 | Panelbreiten und Fensterzustand müssen über Sitzungen hinweg erhalten bleiben. | S | T |
 | SM-SET-004 | Das System muss Tastaturkürzel für die häufigsten Aktionen bieten. | S | D |
 | SM-SET-005 | Tastaturkürzel sollen konfigurierbar sein. | K | T |
@@ -477,6 +478,8 @@ Anforderungen an das fachliche Datenmodell. Die technische Ausgestaltung erfolgt
 | SM-NFR-012 | Der Code muss automatisiert geprüft werden: Modultests, Formatparser-Fuzzing, statische Analyse und Lizenzprüfung in der CI. | M | I |
 | SM-NFR-013 | Die Systemeinstellung für reduzierte Bewegung muss respektiert werden; dann findet keine Bewegung statt. | S | D |
 | SM-NFR-014 | Das System darf keine Telemetrie und keine Nutzungsdaten übertragen. | M | I |
+| SM-NFR-015 | Jeder Bildschirm muss einen verständlichen Leer-, Lade- und Fehlerzustand zeigen; lange Vorgänge müssen abbrechbar sein und danach einen konsistenten, wiederholbaren Stand hinterlassen. | M | D |
+| SM-NFR-016 | Jedes Bedienelement muss die Zustände Ruhe, Zeigerkontakt, Aktiv und Deaktiviert besitzen, mindestens 26 × 26 px sichtbar und über mindestens 32 × 32 px treffbar sein. Trenner dürfen 1 px sichtbar sein, besitzen mindestens 6 px Ziehfläche und eine 32 px breite unsichtbare Trefferzone. | M | D |
 
 ---
 
@@ -613,6 +616,8 @@ zugeordneten Prüffall gilt als nicht abgenommen.
 > **Dieses Register ist die einzige Liste offener Punkte des Vorhabens.** DES-STM-001 und
 > TEC-STM-001 führen keine eigene Nummerierung, sondern verweisen hierher.
 
+### 14.1 Ungeklärte Punkte
+
 | Nr | Frage | Auswirkung | Zu klären bis |
 |---|---|---|---|
 | **OP-01** | Bleibt es bei einer Einzelplatzanwendung, oder ist Synchronisation zwischen Geräten bzw. Mehrbenutzerbetrieb vorgesehen? | Grundlegend: entscheidet über Datenhaltung, Konfliktbehandlung, Rechtekonzept und einen erheblichen Teil des technischen Aufbaus. Alle Anforderungen dieses Dokuments sind als Einzelplatzfunktionen formuliert. | vor Beginn der Spezifikation |
@@ -621,21 +626,26 @@ zugeordneten Prüffall gilt als nicht abgenommen.
 | **OP-04** | Wie wird mit der Paketsignatur umgegangen? Signaturzertifikate sind kostenpflichtige proprietäre Dienste ohne quelloffene Entsprechung. | Signatur als Infrastruktur akzeptieren — dann gelten SM-PLT-002 und SM-SEC-012 unverändert. Oder unsigniert ausliefern — dann warnt Windows beim Start, und macOS verweigert ihn ohne manuellen Eingriff. | vor dem ersten Auslieferungsbau |
 | **OP-05** | Wird die Anbindung an einen entfernten KI-Dienst beibehalten, entfernt oder hinter einen Bau-Schalter gelegt? | SM-OSS-013 verlangt nur Abschaltbarkeit. Vollständiges Entfernen vereinfacht die Prüfung, streicht aber SM-KIA-003. | vor der Spezifikation |
 | **OP-06** | Behält das Produkt den Namen „StitchManager", oder wird es unter der Marke Kreuznaht geführt? | Betrifft Anwendungskennung, Symbole und Paketnamen. Eine spätere Änderung der Anwendungskennung ist aufwendig. | vor dem ersten Auslieferungsbau |
-| **OP-07** | Ist die dritte Schrift (Festbreite) für Zahlen und Maße freigegeben? | Der Kreuznaht-Markenstandard sieht keine vor. Ohne Freigabe müssen Maße und Zahlen anders gesetzt werden. | vor Umsetzungsbeginn der Oberfläche |
 | **OP-08** | Welches Gerät gilt als „mittlere Ausstattung" für die Messungen in SM-NFR-004 und SM-SRC-007? | Ohne festgelegte Referenz sind die Leistungsanforderungen nicht prüfbar. | vor der Prüfplanung |
-| **OP-09** | Sind die rekonstruierten Kreuznaht-Farbwerte gegen den Markenstandard abgeglichen? | Die Bezeichner in DES-STM-001 bleiben, die Werte können sich ändern. Der Abgleich gehört vor den ersten Umsetzungsschritt der Oberfläche. | vor Umsetzungsbeginn der Oberfläche |
 | **OP-10** | Bleibt die Listenansicht als Alternative zur Kachelansicht bestehen (SM-PRV-006)? | Entfällt sie, wird der Umschalter gestrichen und SM-PRV-006 entfällt. | vor Umsetzungsbeginn der Oberfläche |
 | **OP-11** | Erhält der Dunkelmodus ein eigenes Anwendungssymbol? | Terracotta auf Espresso trägt; ein farbiges Symbol möglicherweise nicht. | vor dem ersten Auslieferungsbau |
 | **OP-12** | Soll die Übersichtskarte weitere Kennzahlen zeigen, etwa Lizenzstatus oder ungepflegte Muster? | Weitere Kennzahlen kosten Höhe, die dem Ordnerbaum fehlt. | vor Umsetzungsbeginn der Oberfläche |
-| **OP-13** | Meint „neue Applikation“ eine Neuentwicklung **ohne** Wiederverwendung vorhandenen Codes? TEC-STM-001 sieht die Wiederverwendung eines vorhandenen Rust-Kerns vor. | Betrifft rund 31.500 Zeilen geprüften Code und damit Aufwand und Zeitplan erheblich. Die Anforderungen dieses Dokuments gelten in beiden Fällen unverändert. | vor der Aufwandsschätzung |
 | **OP-14** | Erfassen SM-FMT-012 und SM-SEC-011 mit der Formulierung „Alle Formatparser“ auch die Anzeigekomponente für Fremddokumente — PDF-Schnittmuster und Nähanleitungen —, oder ist dafür eine eigene Anforderung nötig? | SM-DOC-004 verlangt die Anzeige innerhalb der Anwendung; die dafür nötige Komponente liest Fremddaten wie ein Stickformatparser. Ob der Wortlaut „Alle Formatparser“ in SM-FMT-012 und SM-SEC-011 sie einschließt, ist dem Text nicht eindeutig zu entnehmen. Von der Antwort hängt ab, ob Absturzfreiheit, begrenzte Speicherbelegung und Verhalten bei manipulierten Dokumenten für diese Komponente einen Abnahmebezug haben. Aufgeworfen bei der Sicherheitsprüfung des Implementierungsplans. | vor der Spezifikation |
-| **OP-15** | Erhalten die leeren, ladenden und fehlerhaften Zustände aus DES-STM-001 Abschnitt 10 eine eigene Anforderung? | DES-STM-001 formuliert sechs Zustände verbindlich aus. Gedeckt sind: die feststehende Kachelhöhe durch SM-PRV-009, der Klartextgrund bei nicht lesbarer Datei durch SM-NFR-006, die Neuverknüpfung durch SM-EXP-010, die Fortschrittsanzeige des Imports durch SM-IMP-002 und der Abbruch von Stapelvorgängen durch SM-BAT-005. **Ohne Kennung sind der Leerzustand, die Trefferlosigkeit und die Abbruchmöglichkeit langer Vorgänge außerhalb der Stapelverarbeitung** — SM-BAT-005 deckt nur den Stapelvorgang, SM-IMP-002 nur die Fortschrittsanzeige des Imports, nicht dessen Abbruch. Gerade der Leerzustand trägt die primäre Auffindbarkeit des Imports, und ein laufender Import über 100.000 Dateien ohne Abbruchweg bindet die Anwendung. Die Frage betrifft **jeden Bildschirm**, nicht nur die Musterauswahl: Detailbereich, Dokumentanzeige, Druckvorschau, Exportdialog, Stapelvorschau und Analyse haben dieselben drei Zustände. Aufgeworfen bei der Bedienbarkeitsprüfung des Implementierungsplans. | vor Umsetzungsbeginn der Oberfläche |
-| **OP-16** | Erhalten die Zustandstabelle und die Mindestgrößen von Bedienelementen aus DES-STM-001 Abschnitt 7 eine eigene Anforderung? | DES-STM-001 legt je Bedienelement die Zustände Ruhe, Zeigerkontakt, Aktiv und Deaktiviert fest und fordert mindestens 26 × 26 px sichtbare Größe bei 32 × 32 px Trefferfläche. Im Lastenheft trägt beides keine Kennung; SM-NFR-008 deckt die Erreichbarkeit, nicht die Treffbarkeit. Zu klären ist zugleich ein Widerspruch innerhalb von DES-STM-001: Abschnitt 5 gibt für die Trenner eine Ziehfläche von mindestens 6 px vor, Abschnitt 7 für Bedienelemente eine Trefferfläche von mindestens 32 × 32 px. Ob der Trenner ein Bedienelement in diesem Sinne ist, entscheidet über beide Maße. Ohne Kennung ist die Treffbarkeit für Nutzer mit eingeschränkter Feinmotorik nicht abnehmbar, und eine spätere Korrektur betrifft jedes Bedienelement. Aufgeworfen bei der Bedienbarkeitsprüfung des Implementierungsplans. | vor Umsetzungsbeginn der Oberfläche |
-| **OP-17** | Erhält die Übersichtskarte der Navigationsspalte aus DES-STM-001 Abschnitt 6.2 eine eigene Anforderung? | Gesamtbestand als Festbreitenzahl und Formatverteilung als Balken sind verbindlich beschrieben; SM-LIB-002 fordert nur die Abbildung der Ordnerhierarchie. Ohne Kennung lässt sich der Übersichtskarte kein Prüffall zuordnen; nach Abschnitt 13.2 gälte sie damit als nicht abgenommen. Hängt mit OP-12 zusammen, der über zusätzliche Kennzahlen derselben Karte entscheidet. | vor Umsetzungsbeginn der Oberfläche |
 | **OP-18** | Welche Schwellenwerte gelten für Eingabelatenz (SM-NFR-002) und Entprellintervall (SM-SRC-008)? | Beide Anforderungen tragen die Prüfmethode **A** — Messung —, nennen aber keine Zahl. Eine Messung ohne Schwelle ist weder bestehbar noch durchfallbar; „bestanden“ wäre eine Einschätzung, die Abschnitt 13.2 ausschließt. Die einzige numerische Zeitzusage des Dokuments (SM-NFR-004, fünf Sekunden) betrifft die Startzeit. Aufgeworfen bei der Leistungsprüfung des Implementierungsplans. | vor der Prüfplanung |
-| **OP-19** | Deckt SM-SET-002 auch das Fortbestehen der manuellen Übersteuerung über einen Neustart hinweg, oder erfasst SM-SET-003 mit „Fensterzustand“ die gewählte Darstellungsart? | SM-SET-002 fordert, die Systemeinstellung übernehmen zu können, „mit manueller Übersteuerung“; SM-SET-003 nennt „Panelbreiten und Fensterzustand“. Ob die einmal getroffene Wahl zwischen Hell- und Dunkelmodus den Programmstart übersteht, sagt keine der beiden Kennungen eindeutig. Für Nutzer, die aus Lichtempfindlichkeit auf den Dunkelmodus angewiesen sind, entscheidet die Antwort darüber, ob sie ihn bei jedem Start neu einstellen. Aufgeworfen bei der Prüfung des Implementierungsplans. | vor Umsetzungsbeginn der Oberfläche |
 | **OP-20** | Erhalten die Sammelaktionen der Hinweisbox für maschinell erzeugte Werte — „Alle übernehmen“ und „Alle verwerfen“ — eine eigene Anforderung? | DES-STM-001 Abschnitt 9 beschreibt beide verbindlich. SM-KIA-007 fordert ausdrücklich die Übernahme **jedes einzelnen** Ergebnisfelds, SM-KIA-008 und SM-DES-009 nur die Kennzeichnung. Ohne Kennung entsteht eine Bedienfunktion, der sich kein Prüffall zuordnen lässt (Abschnitt 13.2). Aufgeworfen bei der Prüfung des Implementierungsplans. | vor Umsetzungsbeginn der Oberfläche |
 | **OP-21** | Deckt SM-PRV-002 („Vorschaubilder müssen dauerhaft zwischengespeichert werden“) auch eine **Obergrenze und ein Verdrängungsverfahren** des Zwischenspeichers, oder ist beides eine eigene Anforderung? | Ein Zwischenspeicher ohne Schranke wächst mit Bestandsgröße und Zahl der Fenstergrößen; bei 100.000 Einträgen und mehreren Auflösungsstufen je Eintrag berührt das SM-NFR-001. Der Wortlaut fordert Dauerhaftigkeit, nicht Beschränktheit — ohne Antwort ist die Bestehbedingung des zugehörigen Prüffalls nicht abnehmbar. Aufgeworfen bei der Leistungsprüfung des Implementierungsplans. | vor der Spezifikation |
+
+### 14.2 Entschiedene Punkte
+
+| Nr | Entscheidung vom 29.08.2026 | Folge |
+|---|---|---|
+| **OP-07** | Die Festbreitenschrift für Zahlen und Maße ist freigegeben. | DES-STM-001 verwendet IBM Plex Mono wie beschrieben. |
+| **OP-09** | Die rekonstruierten Farbwerte sind noch nicht gegen den Markenstandard bestätigt. | Entwickelt wird ausschließlich gegen die stabilen Variablennamen. Die Werte bleiben vorläufig; eine visuelle Markenabnahme ist erst nach dem Abgleich zulässig. |
+| **OP-13** | Weg A ist bestätigt: Der vorhandene Rust-Kern wird wiederverwendet und über cxx-qt an Qt 6 angebunden. | TEC-STM-001 ist als Technologieentscheidung bestätigt; der übernommene Code besitzt keinen Bestandsschutz gegen Anforderungen. |
+| **OP-15** | Leer-, Lade-, Trefferlos-, Fehler- und Abbruchzustände erhalten einen eigenen Abnahmebezug. | Neu: SM-NFR-015; die bisherigen vorläufigen Prüffälle werden PF-NFR-15-Unterfälle. |
+| **OP-16** | Zustandsbelegung und Mindesttrefferflächen erhalten einen eigenen Abnahmebezug. Trenner bleiben 1 px sichtbar und mindestens 6 px breit ziehbar, besitzen aber eine 32 px breite unsichtbare Trefferzone. | Neu: SM-NFR-016; der scheinbare Maßwiderspruch ist aufgelöst. |
+| **OP-17** | Die Übersichtskarte erhält eine eigene Anforderung. | Neu: SM-LIB-011; OP-12 entscheidet weiterhin nur über zusätzliche Kennzahlen. |
+| **OP-19** | Die manuelle Wahl der Darstellungsart muss einen Neustart überstehen. | SM-SET-002 ist präzisiert; kein neuer, danebenliegender Zustandsbegriff wird eingeführt. |
 
 ---
 
@@ -657,6 +667,7 @@ erfolgen über eine neue Version dieses Dokuments mit Eintrag in der Änderungsh
 
 | Version | Datum | Autor | Änderung |
 |---|---|---|---|
+| 1.4 | 29.08.2026 | Auftraggeber | OP-07, OP-09, OP-13, OP-15, OP-16, OP-17 und OP-19 entschieden. Festbreitenschrift und Weg A mit Wiederverwendung des Rust-Kerns/cxx-qt bestätigt; Farbwerte bleiben bis zum Markenabgleich vorläufig. Neu aufgenommen: SM-LIB-011 (Übersichtskarte), SM-NFR-015 (Leer-, Lade-, Fehler- und Abbruchzustände) und SM-NFR-016 (Komponentenzustände und Trefferflächen). SM-SET-002 um die Neustartbeständigkeit der manuellen Darstellungswahl präzisiert. DES-STM-001 v1.4 und TEC-STM-001 v2.3 nachgezogen. Nachweis: `Analysis/20260829_01_sprintplanung.md`. |
 | 1.3 | 24.08.2026 | | Acht neue offene Punkte: **OP-14** (Geltung von SM-FMT-012 und SM-SEC-011 für die Anzeigekomponente von Fremddokumenten), **OP-15** (leere, ladende und fehlerhafte Zustände), **OP-16** (Zustandstabelle und Mindestgrößen von Bedienelementen), **OP-17** (Übersichtskarte der Navigationsspalte) **OP-18** (fehlende Schwellenwerte für zwei Messanforderungen), **OP-19** (Fortbestehen der Modus-Wahl über den Neustart) **OP-20** (Sammelaktionen der Hinweisbox für maschinell erzeugte Werte) und **OP-21** (Obergrenze und Verdrängung des Vorschau-Zwischenspeichers). Alle acht gehen auf Befunde der Stufe-1-Prüfung des Implementierungsplans zurück und benennen Stellen, an denen dieses Dokument eine Lücke lässt: fünf, an denen DES-STM-001 Verhalten verbindlich beschreibt, ohne dass hier eine Kennung dafür steht (OP-14 bis OP-17, OP-20); eine, an der zwei Messanforderungen ohne Schwellenwert bleiben (OP-18); und eine, an der eine Zusage zwischen zwei bestehende Kennungen fällt (OP-19). Sichtbar wurden sie erst bei der Verplanung. An den bestehenden Anforderungen ändert sich nichts. Ergänzt: IMP-STM-001 in Abschnitt 1.5. Nachweis: `Analysis/20260823_03_implementierungsplan.md`. |
 | 1.0 | 23.08.2026 | | Erstfassung. Abgeleitet aus ANA-STM-001 v1.1, umgestellt auf ein eigenständiges Lastenheft ohne Bezug auf Vorgängerstände. Ergänzt: Prüfmethode je Anforderung, Datenobjekte, Betriebsmodi, Verifikationskonzept, Rückverfolgbarkeit, Freigabe. |
 | 1.2 | 23.08.2026 | | Verweise auf DES-STM-001 v1.2 und TEC-STM-001 v2.2 nachgezogen. Anlass ist eine Farbkorrektur in DES-STM-001 (weiße Schrift auf Terracotta verfehlte SM-NFR-007); an den Anforderungen dieses Dokuments ändert sich nichts. Nachweis: `Analysis/20260823_01_gate-befunde-rueckstand.md`. |

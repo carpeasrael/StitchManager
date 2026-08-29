@@ -45,8 +45,8 @@ Telemetrie.
 
 | Planungsstand | Umfang |
 |---|---|
-| Anforderungen im Lastenheft | 222 |
-| Für Version 1.0 verplant | 137 |
+| Anforderungen im Lastenheft | 225 |
+| Für Version 1.0 verplant | 140 |
 | Arbeitspakete | 23 (AP-00 bis AP-22) |
 | Offene Punkte | 21 |
 

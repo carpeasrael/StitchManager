@@ -298,9 +298,21 @@ Regellauf auf `bestanden` fortgeschrieben.
 
 ### 7.3 SP-03 · Rückverfolgbarkeit
 
-**Abgeschlossen am 29.08.2026.** Alle 137 Matrixzeilen wurden nach Arbeitspaket gegen den
-Quellstand und die ausgeführten Kernprüfungen abgeglichen. Acht vollständig gedeckte
-Anforderungen stehen auf `bestanden`, 129 bleiben `offen`. Die zwei ausgesetzt laufenden
+**Abgeschlossen am 29.08.2026.** Zunächst wurden alle 137 Matrixzeilen nach Arbeitspaket gegen
+den Quellstand und die ausgeführten Kernprüfungen abgeglichen. Nach den in SP-02 bestätigten drei
+neuen Muss-Anforderungen umfasst die fortgeschriebene Matrix 140 Zeilen. Acht vollständig
+gedeckte Anforderungen stehen auf `bestanden`, 132 bleiben `offen`. Die zwei ausgesetzt laufenden
 100.000-Einträge-Messfälle wurden ausdrücklich nicht hochgestuft; ihre vorhandenen Werte sind
 ohne das Referenzgerät aus OP-08 nur Regressionswerte. Der Implementierungsplan enthält den
 paketweisen Abgleich und die daraus abgeleiteten Folgeaufgaben.
+
+### 7.4 SP-02 · Auftraggeberentscheidungen
+
+**Abgeschlossen am 29.08.2026.** Der Auftraggeber hat alle im Sprint empfohlenen Antworten
+bestätigt: Weg A mit Wiederverwendung des Rust-Kerns und cxx-qt, Freigabe der
+Festbreitenschrift, vorläufige Farbwerte bis zum Markenabgleich, eigene Anforderungen für
+Zustände/Abbruch, Trefferflächen und Übersichtskarte sowie die neustartbeständige manuelle
+Darstellungswahl. URS-STM-001 v1.4, DES-STM-001 v1.4, TEC-STM-001 v2.3 und IMP-STM-001 v1.1
+sind konsistent fortgeschrieben. Neu entstanden SM-LIB-011, SM-NFR-015 und SM-NFR-016;
+SM-SET-002 ist präzisiert. OP-07, OP-09, OP-13, OP-15 bis OP-17 und OP-19 stehen im führenden
+Register nachvollziehbar unter den entschiedenen Punkten.

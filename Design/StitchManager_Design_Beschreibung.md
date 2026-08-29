@@ -1,11 +1,11 @@
 # StitchManager — Design-Beschreibung für die Entwicklung
 
 **Kennung:** DES-STM-001
-**Version:** 1.3
-**Datum:** 24.08.2026
-**Führendes Dokument:** URS-STM-001 (Lastenheft) v1.3
+**Version:** 1.4
+**Datum:** 29.08.2026
+**Führendes Dokument:** URS-STM-001 (Lastenheft) v1.4
 — dieses Dokument konkretisiert dessen Kapitel 12
-**Mitgeltend:** TEC-STM-001 (Tech-Stack) v2.2 · stitchmanager-mockup.html
+**Mitgeltend:** TEC-STM-001 (Tech-Stack) v2.3 · stitchmanager-mockup.html
 **Umsetzung:** Qt 6 (LGPL-3), siehe TEC-STM-001 Abschnitt 2
 
 ---
@@ -27,10 +27,11 @@ Dieses Dokument darf keine Anforderung begründen, die im Lastenheft fehlt. Ergi
 Gestalten eine neue Anforderung, wird sie **dort** aufgenommen und hier nur referenziert.
 
 **Wichtiger Vorbehalt:** Die Farbwerte in Abschnitt 3 sind aus dem Kreuznaht-Markenstandard
-rekonstruiert, weil `theme-standard.json` bei der Erstellung nicht vorlag. Vor Umsetzungsbeginn
-sind sie dagegen abzugleichen. **Die Variablennamen bleiben dabei unverändert** — ein Abgleich
-ändert Werte, nie Bezeichner. Wer gegen die Namen entwickelt, ist von der Korrektur nicht
-betroffen.
+rekonstruiert, weil `theme-standard.json` bei der Erstellung nicht vorlag. Der Auftraggeber hat
+am 29.08.2026 bestätigt, dass sie noch nicht markenseitig abgeglichen sind (URS-STM-001,
+entschiedener OP-09). Sie bleiben bis dahin vorläufig und dürfen keine visuelle Markenabnahme
+begründen. **Die Variablennamen bleiben unverändert** — entwickelt wird gegen Namen, nie gegen
+wiederholte Farbwerte.
 
 ---
 
@@ -170,8 +171,9 @@ Die folgenden Werte sind gemessen, nicht geschätzt. Alle Textpaare erreichen mi
 - **Lizenz.** Josefin Sans, Lato und IBM Plex Mono stehen unter der SIL Open Font License und
   erfüllen SM-OSS-007. Sie werden mitgeliefert; kein Nachladen von einem externen Dienst
   (SM-DES-004).
-- **IBM Plex Mono ist eine Ergänzung.** Der Kreuznaht-Markenstandard sieht keine
-  Festbreitenschrift vor. Diese Wahl **braucht eine Freigabe** — siehe Kapitel 13, OP-07.
+- **IBM Plex Mono ist eine freigegebene Ergänzung.** Der Kreuznaht-Markenstandard sieht keine
+  Festbreitenschrift vor; der Auftraggeber hat ihre Verwendung am 29.08.2026 bestätigt
+  (URS-STM-001, entschiedener OP-07).
 
 ---
 
@@ -194,7 +196,7 @@ Die folgenden Werte sind gemessen, nicht geschätzt. Alle Textpaare erreichen mi
 | Navigationsspalte | 190–226 px, Vorgabe 226 px |
 | Musterauswahl | ab 300 px, wächst mit Faktor 1,25 |
 | Detailbereich | ab 290 px, wächst mit Faktor 0,95 |
-| Trenner | 1 px sichtbar, **Ziehfläche mindestens 6 px** |
+| Trenner | 1 px sichtbar, **Ziehfläche mindestens 6 px**, unsichtbare Trefferzone 32 px breit |
 | Fenster Mindestbreite | 860 px |
 
 ---
@@ -224,7 +226,7 @@ Die Trenner sind Ziehgriffe. Eingestellte Breiten überleben den Programmneustar
 ### 6.2 Linke Spalte — Übersicht und Navigation
 
 Von oben nach unten: **Übersichtskarte** (Gesamtbestand als große Festbreitenzahl,
-Formatverteilung als Balken mit Legende), dann durch Nähte getrennt die Gruppen
+Formatverteilung als Balken mit Legende; SM-LIB-011), dann durch Nähte getrennt die Gruppen
 **Bibliothek**, **Ordner**, **Intelligente Ordner**, **Arbeit**.
 
 **Betriebsmodus (SM-SET-008):** Im Standardmodus enthält die Gruppe „Arbeit" ausschließlich
@@ -309,7 +311,9 @@ Fortschrittsbalken mit Abbruchmöglichkeit die rechte Gruppe.
 **Fokus:** 2 px `--kn-brand`, 2 px Abstand, immer außen liegend. Der Fokusring wird **nie**
 unterdrückt, auch nicht bei Zeigerbedienung. Er ist an jedem bedienbaren Element sichtbar.
 
-**Mindestgröße für Bedienelemente:** 26 × 26 px sichtbar, Trefferfläche mindestens 32 × 32 px.
+**Mindestgröße für Bedienelemente (SM-NFR-016):** 26 × 26 px sichtbar, Trefferfläche
+mindestens 32 × 32 px. Das gilt auch für Trenner: Die sichtbare Linie und die 6-px-Ziehfläche
+bleiben schlank, liegen aber mittig in einer 32 px breiten unsichtbaren Trefferzone.
 
 ---
 
@@ -345,6 +349,8 @@ Wert, den niemand angesehen hat, darf nie wie ein gepflegter aussehen.
 
 ## 10. Leere, ladende und fehlerhafte Zustände
 
+Alle folgenden Zustände und der konsistente Abbruch langer Vorgänge tragen SM-NFR-015.
+
 | Fall | Darstellung |
 |---|---|
 | Bibliothek leer | Kreuzstich groß in `--kn-border-strong`, Text „Noch keine Muster", Hauptschaltfläche „Ordner importieren" |
@@ -364,7 +370,7 @@ Protokoll, nicht in die Oberfläche.
 | Punkt | Vorgabe |
 |---|---|
 | Variablenablage | **Eine** Datei als einzige Quelle der Farb-, Schrift- und Abstandswerte. Kein Literalwert in Komponenten (SM-DES-003). |
-| Themenwechsel | Zur Laufzeit ohne Neustart. Systemeinstellung als Vorgabewert, manuelle Übersteuerung möglich (SM-SET-002). |
+| Themenwechsel | Zur Laufzeit ohne Neustart. Systemeinstellung als Vorgabewert; die manuelle Übersteuerung bleibt über Neustarts erhalten (SM-SET-002). |
 | Schriften | Als Ressource eingebettet, zur Laufzeit registriert. Keine Abhängigkeit von systemseitig installierten Schriften. |
 | Hohe Auflösung | Alle Symbole als Vektor. Die Stichvorschau wird bei Bedarf neu gezeichnet, nicht hochskaliert. |
 | Listen | Musterauswahl und Farbliste virtualisiert (SM-PRV-007). Die Kachelhöhe steht vor dem Laden der Vorschau fest. |
@@ -401,23 +407,18 @@ Lastenhefts URS-STM-001. Gestaltungsrelevant sind dort:
 
 | Nr | Frage | Wirkung auf dieses Dokument |
 |---|---|---|
-| **OP-07** | Ist die Festbreitenschrift für Zahlen und Maße freigegeben? | Betrifft Abschnitt 4 und jede Zahlendarstellung. Ohne Freigabe müssen Maße und Stichzahlen in der Fließtextschrift mit Ziffern fester Breite gesetzt werden — markenkonform, aber schlechter ausgerichtet. |
-| **OP-09** | Sind die rekonstruierten Farbwerte gegen den Markenstandard abgeglichen? | Betrifft Abschnitt 3. Die Bezeichner bleiben, die Werte können sich ändern. |
 | **OP-10** | Bleibt die Listenansicht neben der Kachelansicht bestehen? | Entfällt sie, wird der Umschalter aus der Werkzeugleiste gestrichen. |
 | **OP-11** | Erhält der Dunkelmodus ein eigenes Anwendungssymbol? | Betrifft die Ikonografie, nicht das Fenster. |
 | **OP-12** | Zeigt die Übersichtskarte weitere Kennzahlen? | Betrifft Abschnitt 6.2. Weitere Kennzahlen kosten Höhe, die dem Ordnerbaum fehlt. |
-| **OP-15** | Erhalten die leeren, ladenden und fehlerhaften Zustände eine eigene Anforderung? | Betrifft Abschnitt 10. Die sechs Zustände sind hier verbindlich ausformuliert; ohne Kennung sind Leerzustand, Trefferlosigkeit und der Abbruch langer Vorgänge außerhalb der Stapelverarbeitung nicht abnehmbar. |
-| **OP-16** | Erhalten Zustandstabelle und Mindestgrößen eine eigene Anforderung? | Betrifft Abschnitt 7. Ohne Kennung ist die Treffbarkeit kleiner Bedienelemente nicht abnehmbar. Zu klären ist zugleich der Widerspruch zwischen der Ziehfläche der Trenner in Abschnitt 5 und der Mindesttrefferfläche in Abschnitt 7. |
-| **OP-17** | Erhält die Übersichtskarte der Navigationsspalte eine eigene Anforderung? | Betrifft Abschnitt 6.2. Gesamtbestand und Formatverteilung sind hier verbindlich beschrieben, tragen aber keine Kennung. Hängt mit OP-12 zusammen. |
-| **OP-19** | Übersteht die manuelle Wahl der Darstellungsart den Neustart? | Betrifft Abschnitt 11. Von der Antwort hängt ab, ob der Dunkelmodus bei jedem Start neu einzustellen ist. |
 | **OP-20** | Erhalten die Sammelaktionen der Hinweisbox eine eigene Anforderung? | Betrifft Abschnitt 9. „Alle übernehmen“ und „Alle verwerfen“ sind hier verbindlich beschrieben, ohne dass eine Kennung sie trägt. |
 
 Das frühere eigene Register dieses Dokuments (Kennungen D1 bis D5) ist aufgelöst; seine
-Einträge entsprechen der Reihe nach OP-07, OP-09, OP-10, OP-11 und OP-12. OP-15 bis OP-17,
-OP-19 und OP-20 sind später hinzugekommen: Sie benennen Stellen, an denen **dieses Dokument**
-Verhalten verbindlich beschreibt, ohne dass das Lastenheft eine Kennung dafür führt. Bis zu
-ihrer Beantwortung hat das beschriebene Verhalten keinen Abnahmebezug — die Arbeitspakete der
-Oberfläche sind dafür gesperrt (IMP-STM-001 Abschnitt 2.1).
+Einträge entsprechen der Reihe nach OP-07, OP-09, OP-10, OP-11 und OP-12. Die am 29.08.2026
+entschiedenen Punkte OP-07, OP-09, OP-15 bis OP-17 und OP-19 stehen weiterhin nachvollziehbar
+in URS-STM-001 Abschnitt 14.2. Ihre Folgen sind hier umgesetzt: Festbreitenschrift freigegeben,
+Farbwerte vorläufig, Abnahmebezug über SM-NFR-015, SM-NFR-016 und SM-LIB-011 sowie
+neustartbeständige Darstellungswahl in SM-SET-002. Offen bleiben in diesem Dokument nur die
+oben aufgeführten Punkte.
 
 ---
 
@@ -425,6 +426,7 @@ Oberfläche sind dafür gesperrt (IMP-STM-001 Abschnitt 2.1).
 
 | Version | Datum | Änderung |
 |---|---|---|
+| 1.4 | 29.08.2026 | Entscheidungen aus URS-STM-001 v1.4 nachgezogen: IBM Plex Mono freigegeben; Farbwerte bis zum Markenabgleich als vorläufig gekennzeichnet; Übersichtskarte an SM-LIB-011, Zustände und Abbruch an SM-NFR-015 sowie Komponentenzustände und Trefferflächen an SM-NFR-016 gebunden. Trenner besitzen bei 1 px sichtbarer Linie und mindestens 6 px Ziehfläche eine 32 px breite unsichtbare Trefferzone. Die manuelle Darstellungswahl übersteht Neustarts nach SM-SET-002. Mitgeltende Verweise auf URS-STM-001 v1.4 und TEC-STM-001 v2.3 nachgezogen. |
 | 1.3 | 24.08.2026 | Abschnitt 13 um **OP-15, OP-16, OP-17, OP-19 und OP-20** ergänzt — Verweise, kein eigenes Register. Alle fünf betreffen Verhalten, das dieses Dokument verbindlich beschreibt, ohne dass URS-STM-001 eine Kennung dafür führt; sie tragen dieselbe Frist wie OP-07, OP-09 und OP-12. Ohne den Eintrag sähe an der maßgeblichen Stelle niemand, dass die Vorgaben derzeit ohne Abnahmebezug sind. Aufgeworfen bei der Design-Prüfung des Implementierungsplans (Runde 14). Nachweis: `Analysis/20260823_03_implementierungsplan.md`. |
 | 1.2 | 23.08.2026 | Farbkorrektur nach einem Befund der Stufe-1-Prüfung (siehe `Analysis/20260823_01_gate-befunde-rueckstand.md`, Befund Curie B-1): Regel 3 in Abschnitt 3.3 erlaubte weiße Schrift auf `--kn-brand`. Nachgerechnet erreicht sie 3,41:1 (hell) und 2,57:1 (dunkel) und verfehlt SM-NFR-007. Neuer Bezeichner `--kn-on-brand` (4,88:1 hell, 6,48:1 dunkel) als einzige Textfarbe auf Terracotta; er ersetzt zugleich das Literal in der Komponententabelle in Abschnitt 7 (SM-DES-003). Verweise auf URS v1.2 und TEC v2.2 nachgezogen. Das Mockup zeigt an dieser Stelle weiterhin den alten Stand — es ist visuelle Referenz, nicht Umsetzungsvorlage, und rangiert nach diesem Dokument. |
 | 1.1 | 23.08.2026 | Abstimmung mit URS-STM-001 v1.1 und TEC-STM-001 v2.1. Verweise SM-DES-008, SM-DES-007, SM-EXP-009 und SM-SEC-009 richtiggestellt (zeigten auf bestehende, aber inhaltlich andere Anforderungen). Eigenes Register (D1 bis D5) aufgelöst. Betriebsmodus in Abschnitt 6.2 ergänzt, Rahmenprüfung an SM-MAC-002 gebunden, Prüfpunkt D-13 ergänzt, Dokumentenhierarchie festgelegt. Nachweis: ABG-STM-001. |

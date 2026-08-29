@@ -1,11 +1,11 @@
 # StitchManager — Tech-Stack
 
 **Kennung:** TEC-STM-001
-**Version:** 2.2
-**Datum:** 23.08.2026
-**Führendes Dokument:** URS-STM-001 (Lastenheft) v1.3
-**Mitgeltend:** DES-STM-001 (Design-Beschreibung) v1.3 · ANA-STM-001 (Konsolidierungsanalyse) v1.1
-**Status:** Empfehlung zur Entscheidung
+**Version:** 2.3
+**Datum:** 29.08.2026
+**Führendes Dokument:** URS-STM-001 (Lastenheft) v1.4
+**Mitgeltend:** DES-STM-001 (Design-Beschreibung) v1.4 · ANA-STM-001 (Konsolidierungsanalyse) v1.1
+**Status:** Technologieentscheidung bestätigt
 
 > **Änderung gegenüber Version 1.0.** Die erste Fassung empfahl, StitchManager-3 unverändert
 > auf Tauri v2 fortzuführen. Diese Empfehlung stand unter der Annahme, dass die
@@ -35,9 +35,10 @@ Bestandsschutz**: Jede Anforderung des Lastenhefts ist am Ergebnis nachzuweisen,
 zugehörige Code neu geschrieben oder übernommen wurde. Übernommener Code, der eine
 Muss-Anforderung nicht erfüllt, wird angepasst wie neuer auch.
 
-> **Zu entscheiden:** Falls „neue Applikation" im Sinne des Auftraggebers eine Neuentwicklung
-> **ohne** Wiederverwendung meint, ist dieses Dokument hinfällig und neu zu erstellen. Der
-> Unterschied beträgt rund 31.500 Zeilen geprüften Code. Geführt als **OP-13** im Lastenheft.
+> **Entschieden am 29.08.2026:** Der Auftraggeber hat Weg A bestätigt. Der vorhandene Rust-Kern
+> wird wiederverwendet und über cxx-qt an Qt 6 angebunden. Der übernommene Code besitzt keinen
+> Bestandsschutz: Jede Anforderung bleibt am Ergebnis nachzuweisen. Geführt als entschiedener
+> **OP-13** in URS-STM-001 Abschnitt 14.2.
 
 ---
 
@@ -329,7 +330,7 @@ sondern eine Bedingung, die der Bau erzwingt.
 |---|---|---|
 | **1** | Lizenzwiderspruch in StichMan2 auflösen (B-09), Lizenz in StitchMan nachtragen (B-10) | Saubere Ausgangslage für die Übernahme |
 | **2** | `cargo-deny`, Stückliste und Lizenzanzeige einrichten | Vorgabe wird erzwungen statt behauptet |
-| **3** | Prototyp: Weg A gegen Weg B, geprüft an 100.000 Einträgen (AK-01) und einem Testdruck mit ± 0,5 mm Toleranz (AK-06) | Belegte Entscheidung statt Annahme |
+| **3** | **Abgeschlossen:** Weg A (cxx-qt) ist gegen Weg B bewertet und vom Auftraggeber bestätigt | Verbindliche Anbindung des wiederverwendeten Rust-Kerns an Qt 6 |
 | **4** | Rust-Kern von der Tauri-Befehlsschicht entkoppeln, saubere Schnittstelle ziehen | Kern wird oberflächenunabhängig |
 | **5** | Flatpak auf KDE-Laufzeitumgebung umstellen, vier Befunde beheben | Linux-Auslieferung funktionsfähig |
 | **6** | Hauptfenster in Qt neu bauen, Kreuznaht-Gestaltung einziehen | Oberfläche auf dem Stand von R3 |
@@ -338,8 +339,8 @@ sondern eine Bedingung, die der Bau erzwingt.
 | **9** | Import-Regelwerk und Duplikaterkennung aus R2 übernehmen | Massenimport auf R2-Niveau |
 | **10** | Signaturketten und Migrationspfad aus R1 | Auslieferbar, Altbestände übernehmbar |
 
-Schritt 3 steht bewusst vor allem Bauen: Die Wahl zwischen den beiden Anbindungswegen ist
-die einzige verbliebene Entscheidung, deren Korrektur später teuer wäre.
+Schritt 3 ist abgeschlossen. Die nachfolgenden Schritte bauen verbindlich auf Weg A auf; eine
+spätere Umstellung der Anbindung ist kein offener Punkt dieses Dokuments.
 
 ---
 
@@ -362,6 +363,7 @@ die einzige verbliebene Entscheidung, deren Korrektur später teuer wäre.
 
 | Version | Datum | Änderung |
 |---|---|---|
+| 2.3 | 29.08.2026 | Weg A durch den Auftraggeber bestätigt: Wiederverwendung des vorhandenen Rust-Kerns und Anbindung an Qt 6 über cxx-qt. OP-13 als entschieden nachgezogen, Status von Empfehlung auf bestätigte Technologieentscheidung gesetzt; Verweise auf URS-STM-001 v1.4 und DES-STM-001 v1.4 aktualisiert. |
 | 1.0 | 23.08.2026 | Erstfassung — Fortführung auf Tauri v2 |
 | 2.0 | 23.08.2026 | Neubewertung unter der Vorgabe ausschließlich quelloffener Komponenten: Oberfläche auf Qt 6 (LGPL-3), Rust-Kern unverändert; Lizenzkapitel und Befunde B-09 bis B-13 ergänzt |
 | 2.2 | 23.08.2026 | Verweise auf URS-STM-001 v1.2 und DES-STM-001 v1.2 nachgezogen. Anlass ist eine Farbkorrektur in DES-STM-001; an der Technologieentscheidung ändert sich nichts. |
