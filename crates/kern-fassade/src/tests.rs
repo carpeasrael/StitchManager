@@ -112,6 +112,38 @@ fn garnfarben_kommen_je_auswahl_nicht_je_ausschnitt() {
     assert_eq!(farben[1].hex, "1F4E79");
 }
 
+#[test]
+fn detail_laeuft_durch_die_fassade_ohne_pfadpreisgabe() {
+    let mut f = fassade_mit(1);
+    let seite = f.ausschnitt(&Abfrage::default(), 0, 10, true).unwrap();
+    let id = seite.kacheln[0].id;
+    let uid = seite.kacheln[0].uid.clone();
+    f.schlagworte_setzen(id, &["Herz".into(), "Fest".into()])
+        .unwrap();
+
+    let d = f.detail(&uid).unwrap().unwrap();
+    assert_eq!(d.uid, uid);
+    assert_eq!(d.name, "Muster 00000");
+    assert_eq!(d.format, "PES");
+    assert_eq!(d.breite_mm, Some(100.0));
+    assert_eq!(d.hoehe_mm, Some(80.0));
+    assert_eq!(d.stichzahl, Some(9000));
+    assert_eq!(d.farbzahl, Some(3));
+    assert_eq!(d.schlagworte, vec!["Fest", "Herz"]);
+    assert_eq!(d.garnfarben.len(), 2);
+    assert_eq!(d.thema, None, "fehlendes Thema wurde erfunden");
+    assert_eq!(d.beschreibung, None, "fehlende Beschreibung wurde erfunden");
+    assert_eq!(d.notizen, None, "fehlende Notizen wurden erfunden");
+    assert_eq!(d.fehlerstatus, None);
+    assert_eq!(d.fehlergrund, None);
+}
+
+#[test]
+fn unbekannte_detailkennung_bleibt_unterscheidbar() {
+    let f = fassade_mit(0);
+    assert_eq!(f.detail("nicht-da").unwrap(), None);
+}
+
 // --- Schnittregel 3: Ausschnitt statt vollständiger Treffermenge ---
 
 #[test]

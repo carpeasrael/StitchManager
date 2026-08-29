@@ -365,6 +365,14 @@ impl qobject::Musterliste {
                 self.as_mut().set_geladen(geladen);
             }
 
+            // SP-05 stellt nur den kernseitigen Detail-Leseweg bereit. Die
+            // QML-Eigenschaften und Darstellung entstehen erst im folgenden
+            // AP-13-Schnitt; bis dahin fordert die Brücke keine Details an.
+            Antwort::DetailLaden { .. }
+            | Antwort::DetailGeladen { .. }
+            | Antwort::DetailNichtGefunden { .. }
+            | Antwort::DetailFehler { .. } => {}
+
             Antwort::VorschauFertig { zeile, uid, pfad } => {
                 self.rust()
                     .vorschauen

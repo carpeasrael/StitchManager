@@ -373,6 +373,90 @@ fn garnfarben_kommen_in_reihenfolge_zurueck() {
     assert_eq!(farben[1].hex, "BBBBBB");
 }
 
+// --- AP-13: gezielter Detail-Lesepfad ---
+
+#[test]
+fn detail_enthaelt_vollstaendigen_datensatz() {
+    let mut h = Datenhaltung::im_speicher().unwrap();
+    let id = h
+        .eintrag_anlegen(&eintrag("detail-1", "Bayerisches Herz", Format::Pes))
+        .unwrap();
+    h.conn
+        .execute(
+            "UPDATE eintrag
+             SET thema = ?1, beschreibung = ?2, notizen = ?3,
+                 fehlerstatus = ?4, fehlergrund = ?5
+             WHERE id = ?6",
+            params![
+                "Volksfest",
+                "Ein farbiges Herz.",
+                "Auf Leinen testen.",
+                "warnung",
+                "Die Farbangabe ist unvollständig.",
+                id
+            ],
+        )
+        .unwrap();
+    h.schlagworte_setzen(id, &["Volksfest".into(), "Herz".into()])
+        .unwrap();
+
+    let d = h.detail_nach_uid("detail-1").unwrap().unwrap();
+    assert_eq!(d.uid, "detail-1");
+    assert_eq!(d.name, "Bayerisches Herz");
+    assert_eq!(d.thema.as_deref(), Some("Volksfest"));
+    assert_eq!(d.beschreibung.as_deref(), Some("Ein farbiges Herz."));
+    assert_eq!(d.notizen.as_deref(), Some("Auf Leinen testen."));
+    assert_eq!(d.format, "PES");
+    assert_eq!(d.breite_mm, Some(100.0));
+    assert_eq!(d.hoehe_mm, Some(80.0));
+    assert_eq!(d.stichzahl, Some(12_000));
+    assert_eq!(d.farbzahl, Some(4));
+    assert_eq!(d.fehlerstatus.as_deref(), Some("warnung"));
+    assert_eq!(
+        d.fehlergrund.as_deref(),
+        Some("Die Farbangabe ist unvollständig.")
+    );
+    assert_eq!(d.schlagworte, vec!["Herz", "Volksfest"]);
+    assert_eq!(d.garnfarben.len(), 1);
+    assert_eq!(d.garnfarben[0].hex, "C8102E");
+}
+
+#[test]
+fn detail_uebertraegt_fehlende_werte_als_fehlend() {
+    let mut h = Datenhaltung::im_speicher().unwrap();
+    h.eintrag_anlegen(&eintrag("detail-leer", "Ohne Angaben", Format::Dst))
+        .unwrap();
+
+    let d = h.detail_nach_uid("detail-leer").unwrap().unwrap();
+    assert_eq!(d.thema, None);
+    assert_eq!(d.beschreibung, None);
+    assert_eq!(d.notizen, None);
+    assert_eq!(d.fehlerstatus, None);
+    assert_eq!(d.fehlergrund, None);
+    assert!(d.schlagworte.is_empty());
+}
+
+#[test]
+fn unbekannte_detailkennung_liefert_keinen_datensatz() {
+    let h = Datenhaltung::im_speicher().unwrap();
+    assert_eq!(h.detail_nach_uid("nicht-da").unwrap(), None);
+}
+
+#[test]
+fn detail_datenbankfehler_bleibt_ein_fehler() {
+    let mut h = Datenhaltung::im_speicher().unwrap();
+    h.eintrag_anlegen(&eintrag("detail-defekt", "Defekt", Format::Pes))
+        .unwrap();
+    h.conn
+        .execute_batch("DROP TABLE eintrag_schlagwort;")
+        .unwrap();
+
+    assert!(matches!(
+        h.detail_nach_uid("detail-defekt"),
+        Err(Fehler::Datenbank(_))
+    ));
+}
+
 #[test]
 fn geloeschter_eintrag_nimmt_seine_farben_mit() {
     let mut h = Datenhaltung::im_speicher().unwrap();

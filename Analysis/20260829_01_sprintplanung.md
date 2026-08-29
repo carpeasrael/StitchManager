@@ -316,3 +316,41 @@ Darstellungswahl. URS-STM-001 v1.4, DES-STM-001 v1.4, TEC-STM-001 v2.3 und IMP-S
 sind konsistent fortgeschrieben. Neu entstanden SM-LIB-011, SM-NFR-015 und SM-NFR-016;
 SM-SET-002 ist präzisiert. OP-07, OP-09, OP-13, OP-15 bis OP-17 und OP-19 stehen im führenden
 Register nachvollziehbar unter den entschiedenen Punkten.
+
+### 7.5 SP-05 · Kernseitiger Vertikalschnitt für AP-13
+
+**Technisch abgeschlossen am 29.08.2026.** `kern-db` liest einen gezielten Detaildatensatz über
+die dauerhafte Kennung. Hauptzeile, alphabetisch geordnete Schlagworte und Garnfarben werden mit
+konstant drei parametrisierten Abfragen geladen; fehlende optionale Texte bleiben fehlend. Der
+öffentliche Typ aus `kern-fassade` enthält keinen Quelldateipfad und keine Datenbankkennung.
+
+`kern-services` führt den Abruf im bestehenden Arbeitsfaden aus und unterscheidet Laden, Erfolg,
+unbekannte Kennung und Datenfehler. Eine vom Aufrufer vergebene Anfragenummer läuft durch jede
+Antwort. Damit kann die spätere QML-Anbindung Antworten einer überholten Auswahl erkennen und
+verwerfen, statt sie dem inzwischen gewählten Eintrag zuzuordnen. Datenbank- und Datei-E/A werden
+durch diesen Weg nicht in den Qt-Faden verlagert.
+
+Die Kern- und Dienstprüffälle decken den vollständigen Datensatz einschließlich Fehlerzustand,
+Schlagworten und Garnfarben, fehlende Werte, unbekannte Kennungen, Datenbankfehler sowie zwei
+schnell aufeinanderfolgende Auswahlen ab. Der gezielte Regellauf besteht mit 83 Prüffällen; zwei
+gesonderte Messfälle bleiben ausgesetzt.
+
+Die Rückverfolgbarkeitsmatrix bleibt unverändert bei acht bestandenen und 132 offenen
+Anforderungen. Der Leseweg ist ein nachgewiesener Teilschnitt, aber noch kein vollständiger
+Prüffall für SM-DES-008 oder eine der SM-MET-Anforderungen. QML-Anzeige, Bearbeitung,
+ungespeicherte Änderungen, Mehrfachauswahl und Stichanteile der Farbliste bleiben ausdrücklich
+Folgeumfang von AP-13.
+
+### 7.6 Sprintabschluss
+
+**Abgeschlossen am 29.08.2026.** SP-01 bis SP-05 und alle zugesagten Akzeptanzkriterien dieses
+Sprints sind umgesetzt. Der abschließende Workspace-Regellauf besteht mit 185 Prüffällen; 14
+vom externen Prüfbestand oder gezielten Messlauf abhängige Fälle bleiben begründet ausgesetzt.
+Formatierung, Clippy, QML-, Projektregel-, Dokument- und Planprüfung sind grün. Die Matrix wurde
+nicht aufgrund des AP-13-Teilschnitts hochgestuft und behauptet damit keinen unausgeführten
+Nachweis.
+
+Der unabhängige Reviewer war nach zwei vorgeschriebenen Rauchtests nicht erreichbar, weil
+Claude Code nicht angemeldet ist. Die deterministischen Prüfungen und der dokumentierte
+Gate-Override erlauben den lokalen Abschluss; eine unabhängige Nachprüfung bleibt vor der
+Veröffentlichung verpflichtend.

@@ -11,7 +11,7 @@
 
 #![forbid(unsafe_code)]
 
-use kern_db::{Ausschnitt, Bestandszeile, Datenhaltung, NeuerEintrag, Trefferzeile};
+use kern_db::{Ausschnitt, Bestandszeile, Datenhaltung, Detailzeile, NeuerEintrag, Trefferzeile};
 use kern_render::{Stufe, Zwischenspeicher};
 use kern_security::Wurzel;
 use kern_typen::{Ergebnis, Fehler, Format, Garnfarbe};
@@ -74,6 +74,50 @@ pub struct Kachel {
     pub hoehe_mm: Option<f64>,
     /// Der Fehlerzustand der Kachel (SM-IMP-009, DES-STM-001 Abschnitt 10).
     pub fehlergrund: Option<String>,
+}
+
+/// Detaildaten eines ausgewählten Eintrags (AP-13).
+///
+/// Der Typ enthält keine Datenbankdetails und keinen Quelldateipfad. Damit
+/// bleibt die Fassade die einzige Kernschnittstelle der Oberfläche und ein
+/// Detailabruf kann keinen unmaskierten Pfad in die Anzeige tragen.
+#[derive(Debug, Clone, PartialEq)]
+pub struct EintragDetail {
+    pub uid: String,
+    pub name: String,
+    pub thema: Option<String>,
+    pub beschreibung: Option<String>,
+    pub notizen: Option<String>,
+    pub format: String,
+    pub breite_mm: Option<f64>,
+    pub hoehe_mm: Option<f64>,
+    pub stichzahl: Option<i64>,
+    pub farbzahl: Option<i64>,
+    pub fehlerstatus: Option<String>,
+    pub fehlergrund: Option<String>,
+    pub schlagworte: Vec<String>,
+    pub garnfarben: Vec<Garnfarbe>,
+}
+
+impl From<Detailzeile> for EintragDetail {
+    fn from(d: Detailzeile) -> Self {
+        Self {
+            uid: d.uid,
+            name: d.name,
+            thema: d.thema,
+            beschreibung: d.beschreibung,
+            notizen: d.notizen,
+            format: d.format,
+            breite_mm: d.breite_mm,
+            hoehe_mm: d.hoehe_mm,
+            stichzahl: d.stichzahl,
+            farbzahl: d.farbzahl,
+            fehlerstatus: d.fehlerstatus,
+            fehlergrund: d.fehlergrund,
+            schlagworte: d.schlagworte,
+            garnfarben: d.garnfarben,
+        }
+    }
 }
 
 // **Was hier bewusst fehlt.** DES-STM-001 Abschnitt 6.3 zählt den Kachelaufbau
@@ -244,6 +288,16 @@ impl Fassade {
     /// Detailbereich zeigt sie, die Kachel nicht (SM-DES-007).
     pub fn garnfarben(&self, eintrag_id: i64) -> Ergebnis<Vec<Garnfarbe>> {
         self.haltung.garnfarben(eintrag_id)
+    }
+
+    /// Holt den vollständigen Lesedatensatz für genau eine dauerhafte Kennung.
+    ///
+    /// Der Aufruf berührt keine Quelldatei. Im Anwendungsweg wird er vom
+    /// `kern-services`-Arbeitsfaden ausgeführt, nie vom Qt-Faden.
+    pub fn detail(&self, uid: &str) -> Ergebnis<Option<EintragDetail>> {
+        self.haltung
+            .detail_nach_uid(uid)
+            .map(|d| d.map(EintragDetail::from))
     }
 
     /// Ermittelt, was ein Lauf zu tun hat — **ohne eine Datei zu lesen**

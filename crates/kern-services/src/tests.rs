@@ -304,6 +304,166 @@ fn ausschnitt_kommt_ueber_den_rueckkanal() {
     assert_eq!(gesamt, Some(25));
 }
 
+// --- AP-13: Detail-Lesepfad im Arbeitsfaden ---
+
+#[test]
+fn detail_meldet_laden_und_erfolg_mit_anfragenummer() {
+    let tmp = bestand_anlegen(2);
+    let (betrieb, horcher, kacheln) = kacheln_aus_bestand(tmp.path());
+    let uid = kacheln[0].uid.clone();
+
+    betrieb.beauftragen(Befehl::DetailLaden {
+        anfrage_id: 41,
+        uid: uid.clone(),
+    });
+
+    let (lade_id, lade_uid) = horcher.warte_auf("DetailLaden", |a| match a {
+        Antwort::DetailLaden { anfrage_id, uid } => Some((*anfrage_id, uid.clone())),
+        _ => None,
+    });
+    assert_eq!((lade_id, lade_uid), (41, uid.clone()));
+
+    let (antwort_id, detail) = horcher.warte_auf("DetailGeladen", |a| match a {
+        Antwort::DetailGeladen { anfrage_id, detail } => Some((*anfrage_id, detail.clone())),
+        _ => None,
+    });
+    assert_eq!(antwort_id, 41);
+    assert_eq!(detail.uid, uid);
+    assert_eq!(detail.format, "DST");
+    assert!(detail.breite_mm.is_some());
+    assert!(detail.hoehe_mm.is_some());
+    assert!(detail.stichzahl.is_some());
+    assert!(detail.farbzahl.is_some());
+    assert_eq!(detail.thema, None);
+    assert_eq!(detail.beschreibung, None);
+    assert_eq!(detail.notizen, None);
+    // DST enthält keine eingebettete, benannte Garnpalette. Der vollständige
+    // Transport einer vorhandenen Palette wird im folgenden Abbildungstest
+    // unabhängig vom Dateiformat geprüft.
+    assert!(detail.garnfarben.is_empty());
+}
+
+#[test]
+fn dienstabbildung_erhaelt_vollstaendigen_detaildatensatz() {
+    let (horcher, melden) = Horcher::neu();
+    let erwartet = EintragDetail {
+        uid: "detail-vollstaendig".into(),
+        name: "Blütenrand".into(),
+        thema: Some("Botanik".into()),
+        beschreibung: Some("Zweifarbige Bordüre".into()),
+        notizen: Some("Auf Leinen geprüft".into()),
+        format: "PES".into(),
+        breite_mm: Some(84.2),
+        hoehe_mm: Some(31.7),
+        stichzahl: Some(4_212),
+        farbzahl: Some(2),
+        fehlerstatus: Some("warnung".into()),
+        fehlergrund: Some("Farbzuordnung prüfen".into()),
+        schlagworte: vec!["Rand".into(), "Blume".into()],
+        garnfarben: vec![
+            kern_typen::Garnfarbe {
+                hex: "C8102E".into(),
+                name: Some("Rot".into()),
+                marke: Some("Prüfmarke".into()),
+                markenschluessel: Some("R-01".into()),
+            },
+            kern_typen::Garnfarbe {
+                hex: "0047AB".into(),
+                name: Some("Blau".into()),
+                marke: None,
+                markenschluessel: None,
+            },
+        ],
+    };
+
+    detailantwort_melden(
+        55,
+        erwartet.uid.clone(),
+        Ok(Some(erwartet.clone())),
+        &melden,
+    );
+
+    let (anfrage_id, erhalten) = horcher.warte_auf("vollständiges Detail", |a| match a {
+        Antwort::DetailGeladen { anfrage_id, detail } => Some((*anfrage_id, detail.clone())),
+        _ => None,
+    });
+    assert_eq!(anfrage_id, 55);
+    assert_eq!(*erhalten, erwartet);
+}
+
+#[test]
+fn unbekannte_detailkennung_hat_eigene_antwort() {
+    let tmp = bestand_anlegen(1);
+    let (betrieb, horcher) = betrieb_mit(tmp.path());
+
+    betrieb.beauftragen(Befehl::DetailLaden {
+        anfrage_id: 77,
+        uid: "nicht-da".into(),
+    });
+
+    let (anfrage_id, uid) = horcher.warte_auf("DetailNichtGefunden", |a| match a {
+        Antwort::DetailNichtGefunden { anfrage_id, uid } => Some((*anfrage_id, uid.clone())),
+        _ => None,
+    });
+    assert_eq!(anfrage_id, 77);
+    assert_eq!(uid, "nicht-da");
+}
+
+#[test]
+fn detailantworten_bleiben_bei_schnellem_auswahlwechsel_zuordenbar() {
+    let tmp = bestand_anlegen(2);
+    let (betrieb, horcher, kacheln) = kacheln_aus_bestand(tmp.path());
+    let erste_uid = kacheln[0].uid.clone();
+    let zweite_uid = kacheln[1].uid.clone();
+
+    betrieb.beauftragen(Befehl::DetailLaden {
+        anfrage_id: 100,
+        uid: erste_uid.clone(),
+    });
+    betrieb.beauftragen(Befehl::DetailLaden {
+        anfrage_id: 101,
+        uid: zweite_uid.clone(),
+    });
+
+    let mut antworten = std::collections::BTreeMap::new();
+    while antworten.len() < 2 {
+        let (id, uid) = horcher.warte_auf("DetailGeladen nach Auswahlwechsel", |a| match a {
+            Antwort::DetailGeladen { anfrage_id, detail } => {
+                Some((*anfrage_id, detail.uid.clone()))
+            }
+            _ => None,
+        });
+        antworten.insert(id, uid);
+    }
+    assert_eq!(antworten.get(&100), Some(&erste_uid));
+    assert_eq!(antworten.get(&101), Some(&zweite_uid));
+}
+
+#[test]
+fn datenfehler_hat_eigene_detailantwort() {
+    let (horcher, melden) = Horcher::neu();
+    detailantwort_melden(
+        88,
+        "detail-fehler".into(),
+        Err(kern_typen::Fehler::Datenbank(
+            "Die Bibliothek konnte den Vorgang nicht ausführen.".into(),
+        )),
+        &melden,
+    );
+
+    let (anfrage_id, uid, text) = horcher.warte_auf("DetailFehler", |a| match a {
+        Antwort::DetailFehler {
+            anfrage_id,
+            uid,
+            text,
+        } => Some((*anfrage_id, uid.clone(), text.clone())),
+        _ => None,
+    });
+    assert_eq!(anfrage_id, 88);
+    assert_eq!(uid, "detail-fehler");
+    assert!(text.contains("Bibliothek"));
+}
+
 #[test]
 fn vorschau_wird_erzeugt_und_gemeldet() {
     let tmp = bestand_anlegen(3);

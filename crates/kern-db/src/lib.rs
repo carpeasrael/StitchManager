@@ -101,6 +101,28 @@ pub struct Trefferzeile {
     pub fehlergrund: Option<String>,
 }
 
+/// Vollständiger Lesedatensatz für den ausgewählten Eintrag (AP-13).
+///
+/// Leere optionale Textfelder werden als `None` geliefert. Der Detailbereich
+/// darf fehlende Metadaten nicht mit erfundenen Werten auffüllen.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Detailzeile {
+    pub uid: String,
+    pub name: String,
+    pub thema: Option<String>,
+    pub beschreibung: Option<String>,
+    pub notizen: Option<String>,
+    pub format: String,
+    pub breite_mm: Option<f64>,
+    pub hoehe_mm: Option<f64>,
+    pub stichzahl: Option<i64>,
+    pub farbzahl: Option<i64>,
+    pub fehlerstatus: Option<String>,
+    pub fehlergrund: Option<String>,
+    pub schlagworte: Vec<String>,
+    pub garnfarben: Vec<Garnfarbe>,
+}
+
 /// Ein Ausschnitt einer Treffermenge (Schnittregel 3).
 ///
 /// `gesamt` trägt **nur der erste Ausschnitt** eines Suchlaufs. Folgeausschnitte
@@ -917,6 +939,73 @@ impl Datenhaltung {
             .collect::<Result<Vec<_>, _>>()
             .map_err(db_fehler)?;
         Ok(farben)
+    }
+
+    /// Liest den vollständigen Detaildatensatz über die dauerhafte Kennung.
+    ///
+    /// Dieser gezielte Abruf läuft nur für die Auswahl, nie für jede Kachel.
+    /// Hauptzeile, Schlagworte und Garnfarben kosten zusammen konstant drei
+    /// parametrisierte Abfragen, unabhängig von der Treffermenge.
+    pub fn detail_nach_uid(&self, uid: &str) -> Ergebnis<Option<Detailzeile>> {
+        self.zaehle();
+        let gefunden = self
+            .conn
+            .query_row(
+                "SELECT id, uid, name,
+                        NULLIF(thema, ''), NULLIF(beschreibung, ''), NULLIF(notizen, ''),
+                        format, breite_mm, hoehe_mm, stichzahl, farbzahl,
+                        fehlerstatus, fehlergrund
+                 FROM eintrag WHERE uid = ?1",
+                params![uid],
+                |z| {
+                    Ok((
+                        z.get::<_, i64>(0)?,
+                        Detailzeile {
+                            uid: z.get(1)?,
+                            name: z.get(2)?,
+                            thema: z.get(3)?,
+                            beschreibung: z.get(4)?,
+                            notizen: z.get(5)?,
+                            format: z.get(6)?,
+                            breite_mm: z.get(7)?,
+                            hoehe_mm: z.get(8)?,
+                            stichzahl: z.get(9)?,
+                            farbzahl: z.get(10)?,
+                            fehlerstatus: z.get(11)?,
+                            fehlergrund: z.get(12)?,
+                            schlagworte: Vec::new(),
+                            garnfarben: Vec::new(),
+                        },
+                    ))
+                },
+            )
+            .optional()
+            .map_err(db_fehler)?;
+
+        let Some((id, mut detail)) = gefunden else {
+            return Ok(None);
+        };
+
+        self.zaehle();
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT s.name
+                 FROM schlagwort s
+                 JOIN eintrag_schlagwort es ON es.schlagwort_id = s.id
+                 WHERE es.eintrag_id = ?1
+                 ORDER BY s.name COLLATE NOCASE, s.id",
+            )
+            .map_err(db_fehler)?;
+        detail.schlagworte = stmt
+            .query_map(params![id], |z| z.get(0))
+            .map_err(db_fehler)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(db_fehler)?;
+        drop(stmt);
+
+        detail.garnfarben = self.garnfarben(id)?;
+        Ok(Some(detail))
     }
 
     /// Garnfarben **aller** Zeilen eines Ausschnitts in **einer** Abfrage.

@@ -15,7 +15,7 @@
 
 #![forbid(unsafe_code)]
 
-use kern_fassade::{Abfrage, Fassade, Importbefund, Seite};
+use kern_fassade::{Abfrage, EintragDetail, Fassade, Importbefund, Seite};
 use kern_render::{Stufe, Vorschauoption, Zwischenspeicher};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -49,6 +49,12 @@ pub enum Befehl {
         anzahl: i64,
         mit_gesamtzahl: bool,
     },
+    /// Holt die Details einer dauerhaften Kennung im Arbeitsfaden.
+    ///
+    /// `anfrage_id` wird unverändert in jeder Antwort mitgeführt. Die
+    /// Oberfläche kann dadurch eine verspätete Antwort nach einem schnellen
+    /// Auswahlwechsel sicher verwerfen.
+    DetailLaden { anfrage_id: u64, uid: String },
 }
 
 /// Ein Vorschauauftrag. Er liegt in einer eigenen, begrenzten Schlange.
@@ -80,6 +86,24 @@ pub enum Antwort {
         abgebrochen: bool,
     },
     Seite(Box<Seite>),
+    /// Der Detailabruf hat im Arbeitsfaden begonnen (SM-NFR-015).
+    DetailLaden {
+        anfrage_id: u64,
+        uid: String,
+    },
+    DetailGeladen {
+        anfrage_id: u64,
+        detail: Box<EintragDetail>,
+    },
+    DetailNichtGefunden {
+        anfrage_id: u64,
+        uid: String,
+    },
+    DetailFehler {
+        anfrage_id: u64,
+        uid: String,
+        text: String,
+    },
     VorschauFertig {
         zeile: usize,
         uid: String,
@@ -394,6 +418,42 @@ fn befehl_ausfuehren<F>(
             Ok(seite) => melden(Antwort::Seite(Box::new(seite))),
             Err(e) => melden(Antwort::Fehler(e.to_string())),
         },
+
+        Befehl::DetailLaden { anfrage_id, uid } => {
+            melden(Antwort::DetailLaden {
+                anfrage_id,
+                uid: uid.clone(),
+            });
+            let ergebnis = fassade.detail(&uid);
+            detailantwort_melden(anfrage_id, uid, ergebnis, melden);
+        }
+    }
+}
+
+/// Bildet den Datenbankausgang auf unterscheidbare Dienstantworten ab.
+///
+/// Als eigene Funktion ist auch der Datenfehlerzweig ohne eine absichtlich
+/// beschädigte Produktionsdatenbank prüfbar. Der Arbeitsfaden verwendet exakt
+/// dieselbe Abbildung.
+fn detailantwort_melden<F>(
+    anfrage_id: u64,
+    uid: String,
+    ergebnis: kern_typen::Ergebnis<Option<EintragDetail>>,
+    melden: &F,
+) where
+    F: Fn(Antwort),
+{
+    match ergebnis {
+        Ok(Some(detail)) => melden(Antwort::DetailGeladen {
+            anfrage_id,
+            detail: Box::new(detail),
+        }),
+        Ok(None) => melden(Antwort::DetailNichtGefunden { anfrage_id, uid }),
+        Err(e) => melden(Antwort::DetailFehler {
+            anfrage_id,
+            uid,
+            text: e.to_string(),
+        }),
     }
 }
 
