@@ -47,7 +47,7 @@ begründen und zu dokumentieren. **Kann**-Anforderungen sind Ausbaustufen ohne Z
 | ANA-STM-001 v1.1 | StitchManager_Requirements_konsolidiert.md | Herleitung aus drei Vorgängerständen. **Nur Herleitung, keine Anforderungsquelle.** Die dortigen Befunde B-01 bis B-13 sind keine Anforderungen dieses Dokuments. |
 | ABG-STM-001 | StitchManager_Abstimmungsprotokoll.md | Nachweis der Abstimmung der drei Dokumente |
 | — | stitchmanager-mockup.html | Visuelle Referenz des Hauptfensters |
-| IMP-STM-001 v1.1 | StitchManager_Implementierungsplan.md | Zuordnung der Anforderungen zu Arbeitspaketen und Prüffällen. **Nachgeordnet — begründet und beschränkt keine Anforderung.** |
+| IMP-STM-001 v1.2 | StitchManager_Implementierungsplan.md | Zuordnung der Anforderungen zu Arbeitspaketen und Prüffällen. **Nachgeordnet — begründet und beschränkt keine Anforderung.** |
 
 **Dokumentenhierarchie:** Dieses Lastenheft ist führend. Bei Widersprüchen gilt es vor
 DES-STM-001 und TEC-STM-001. Keines der beiden nachgeordneten Dokumente darf eine Anforderung

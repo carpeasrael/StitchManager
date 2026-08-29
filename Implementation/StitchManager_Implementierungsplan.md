@@ -1,7 +1,7 @@
 # StitchManager — Implementierungsplan
 
 **Kennung:** IMP-STM-001
-**Version:** 1.1
+**Version:** 1.2
 **Datum:** 29.08.2026
 **Führendes Dokument:** URS-STM-001 (Lastenheft) v1.4
 **Mitgeltend:** DES-STM-001 (Design-Beschreibung) v1.4 · TEC-STM-001 (Tech-Stack) v2.3
@@ -756,6 +756,13 @@ Zeitpunkt gebauten Umfang, nicht für die spätere Oberfläche.
   DES-STM-001 Abschnitt 11), SM-FMT-008 und SM-FMT-010 (liefern den Inhalt des Abschnitts
   „Farben")
 - **Vorbedingungen:** AP-12; SM-NFR-015 ist durch die Entscheidung zu OP-15 verbindlich.
+- **Zwischenstand 29.08.2026:** Der kernseitige Lesepfad ist durch `kern-db`, `kern-fassade` und
+  `kern-services` umgesetzt. Er liefert Kennung, Name, Thema, Beschreibung, Notizen, Format,
+  Abmessungen, Stich- und Farbzahl, Fehlerzustand, Schlagworte und Garnfarben im Arbeitsfaden.
+  Lade-, Erfolgs-, Nicht-gefunden- und Fehlerantworten sowie überholte Antworten nach einem
+  Auswahlwechsel sind unterscheidbar. Die QML-Anzeige, Bearbeitung, Mehrfachauswahl und
+  Stichanteile fehlen weiterhin; deshalb ist keine der sieben zugeordneten Anforderungen als
+  bestanden eingetragen. Nachweis: `Analysis/20260829_01_sprintplanung.md`, Abschnitt 7.5.
 - **Ergebnis:** Detailbereich gegliedert in Angaben, Größe, Farben und Optionen; Name, Thema,
   Beschreibung und Notizen bearbeitbar; freie Schlagworte, mehrere je Eintrag; Verschlagwortung
   über Mehrfachauswahl in einem Vorgang; die Schnittmusterfelder Designer, Kleidungstyp,
@@ -1439,7 +1446,9 @@ nicht daneben gepflegt — beide können nicht auseinanderlaufen.
 
 Alle 140 Zeilen wurden gegen den Quellstand und den Regellauf
 `cargo test -p kern-db -p kern-fassade -p kern-render -p kern-services --all-targets`
-abgeglichen. Ergebnis: 93 bestanden, 0 fehlgeschlagen, 2 als Messfälle ausgesetzt. Die beiden
+abgeglichen. Nach dem AP-13-Teilschnitt besteht dieser Lauf mit 104 Prüffällen; 2 Messfälle sind
+ausgesetzt. Der vollständige Workspace-Regellauf besteht mit 185 Prüffällen; insgesamt 14 Fälle
+sind wegen des externen Prüfbestands oder als gezielte Messfälle ausgesetzt. Die beiden
 ausgesetzten 100.000-Einträge-Fälle bleiben Regressionsmessungen und begründen wegen OP-08
 keinen Statuswechsel. Acht Anforderungen besitzen jetzt einen vollständigen, ausgeführten
 Erstnachweis; 132 bleiben `offen`. Komponenten- und Teiltests werden dabei nicht als Abnahme
@@ -1459,7 +1468,7 @@ einer umfassenderen Anforderung gezählt.
 | AP-10 | 7 | 0 | Filter- und Sortierumfang ist unvollständig; die beiden ausgesetzt laufenden Messfälle bleiben Regressionswerte |
 | AP-11 | 12 | 0 | Gestaltungsnachweise fehlen; Farbwerte bleiben bis zum Markenabgleich vorläufig |
 | AP-12 | 17 | 0 | Oberfläche ist nur teilweise umgesetzt; Demonstrationen und Messungen fehlen |
-| AP-13 | 7 | 0 | Detailanzeige und Metadatenbearbeitung fehlen |
+| AP-13 | 7 | 0 | Kern-Lesepfad besteht; QML-Anzeige, Bearbeitung und vollständige AP-13-Nachweise fehlen |
 | AP-14 | 4 | 0 | Dokumentpfad fehlt |
 | AP-15 | 10 | 0 | Druckpfad und körperliche Messung fehlen |
 | AP-16 | 6 | 0 | Export- und Datenträgerpfad fehlen |
@@ -1622,5 +1631,6 @@ geführt, nicht als bestanden (Abschnitt 6.4).
 
 | Version | Datum | Änderung |
 |---|---|---|
+| 1.2 | 29.08.2026 | AP-13-Zwischenstand nach SP-05 ergänzt: Kern-Lesepfad und Dienstantworten umgesetzt, QML und Bearbeitung weiterhin offen. Ausgeführte Prüfzahlen auf 104 im Kern-Regellauf und 185 im vollständigen Workspace-Regellauf aktualisiert; Matrixstatus unverändert bei acht bestandenen und 132 offenen Anforderungen. Nachweis: `Analysis/20260829_01_sprintplanung.md`. |
 | 1.1 | 29.08.2026 | URS-STM-001 v1.4 und DES-STM-001 v1.4 nachgezogen. OP-13 und Weg A bestätigt; OP-07, OP-09, OP-15 bis OP-17 und OP-19 entschieden. Neu verplant: SM-LIB-011, SM-NFR-015 und SM-NFR-016 in AP-12; SM-SET-002 um PF-SET-02.3 ergänzt. Umfang auf 140 Anforderungen (129 Muss und elf nachgezogene Soll) fortgeschrieben; vorläufige OP-Prüffälle in reguläre PF-LIB-, PF-NFR- und PF-SET-Kennungen überführt. Rückverfolgbarkeitsmatrix und Paketabgleich aktualisiert. Nachweis: `Analysis/20260829_01_sprintplanung.md`. |
 | 1.0 | 24.08.2026 | Erstfassung. Abgeleitet aus URS-STM-001 v1.3, DES-STM-001 v1.3 und TEC-STM-001 v2.2. Verplant 137 Anforderungen — alle 126 Muss und elf nachgezogene Soll (SM-KIA-001, SM-SRC-009, SM-BAT-005, SM-NFR-009, SM-NFR-013, SM-SEC-010, SM-FMT-010, SM-MET-010, SM-SET-002, SM-SET-003, SM-SET-004) — in 23 Arbeitspaketen und acht Meilensteinen; Rückverfolgbarkeitsmatrix nach URS-STM-001 Abschnitt 13.3; Entscheidungsgatter für die offenen Punkte, ohne einen davon zu entscheiden. Die übrigen 68 Soll- und 17 Kann-Anforderungen sind begründet zurückgestellt. Herleitung: `Analysis/20260823_03_implementierungsplan.md`. |

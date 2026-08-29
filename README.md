@@ -50,6 +50,22 @@ Telemetrie.
 | Arbeitspakete | 23 (AP-00 bis AP-22) |
 | Offene Punkte | 21 |
 
+### Aktueller Entwicklungsstand
+
+Stand 29.08.2026 ist der Konsolidierungssprint abgeschlossen. Der vollständige
+Workspace-Regellauf besteht mit 185 Prüffällen; 14 Fälle benötigen den externen
+Prüfbestand oder werden nur als gezielte Messfälle gestartet. In der
+Rückverfolgbarkeitsmatrix sind 8 von 140 verplanten Anforderungen durch einen
+vollständigen ausgeführten Nachweis belegt, 132 bleiben offen. Diese Matrixzahl
+ist ein Nachweisstand und kein prozentualer Umsetzungsgrad.
+
+Für AP-13 ist der kernseitige Detail-Lesepfad vorhanden: Datenbank, Fassade und
+Hintergrunddienst liefern Metadaten, technische Werte, Fehlerzustand,
+Schlagworte und Garnfarben mit unterscheidbaren Lade- und Fehlerantworten. Die
+sichtbare QML-Detailansicht und die Metadatenbearbeitung sind noch nicht
+umgesetzt. Der vollständige Stand und die Folgeplanung stehen in der
+[Sprintplanung vom 29.08.2026](Analysis/20260829_01_sprintplanung.md#75-sp-05--kernseitiger-vertikalschnitt-für-ap-13).
+
 ### Bibliothek und Import
 
 - Eine oder mehrere lokale Bibliothekswurzeln einbinden und ihre
@@ -236,7 +252,9 @@ installiert werden.
 2. **Bestand einlesen** starten. Der Import läuft im Hintergrund und verändert
    die Quelldateien nicht.
 3. Über das Suchfeld, die Formatchips und die Sortierung den Bestand eingrenzen.
-4. Eine Kachel auswählen, um Vorschau, Maße, Stichzahl und Garnfarben zu sehen.
+4. Die Kacheln zeigen Vorschau, Format, Name und Abmessungen. Die sichtbare
+   Detailansicht mit Stichzahl, Garnfarben und bearbeitbaren Metadaten folgt im
+   nächsten AP-13-Umsetzungsschnitt.
 
 Die Anwendung speichert Datenbank und Vorschauzwischenspeicher im
 plattformspezifischen Anwendungsverzeichnis. Stickdateien bleiben an ihrem
@@ -245,16 +263,18 @@ ursprünglichen Speicherort.
 ## Technik und Entwicklung
 
 StitchManager besteht aus einem Rust-Kern und einer Qt-6-Oberfläche in QML. Die
-Oberfläche greift ausschließlich über eine schmale Fassade auf Parser,
-Datenhaltung und Dienste zu. Import, Suche und Vorschauerzeugung laufen außerhalb
-des Oberflächenfadens; große Bibliotheken werden ausschnittsweise und
-virtualisiert dargestellt.
+Oberfläche sendet Aufträge an den Hintergrunddienst; dieser greift ausschließlich
+über die schmale Fassade auf Parser, Datenhaltung und Vorschauerzeugung zu.
+Import, Suche, Detailabruf und Vorschauerzeugung laufen außerhalb des
+Oberflächenfadens; große Bibliotheken werden ausschnittsweise und virtualisiert
+dargestellt.
 
 ```text
 Qt 6 / QML
     │
-kern-fassade
-    ├── kern-services   Hintergrundvorgänge
+kern-services           Hintergrundvorgänge und Rückkanal
+    │
+kern-fassade            einzige Zugriffsschicht auf den Kern
     ├── kern-parsers    PES, DST, JEF, VP3
     ├── kern-render     Vorschauerzeugung und Zwischenspeicher
     ├── kern-security   Pfadprüfung
@@ -265,10 +285,11 @@ Tests und Projektprüfungen:
 
 ```bash
 cargo fmt --all -- --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-targets
 
 npm ci
+bash scripts/check-qml.sh
 bash scripts/check-docs.sh
 bash scripts/check-plan.sh
 bash scripts/check-projektregeln.sh
