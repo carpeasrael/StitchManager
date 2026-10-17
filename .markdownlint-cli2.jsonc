@@ -24,7 +24,12 @@
 
   // Deckungsgleich mit dem Aufruf in `scripts/check-docs.sh`. `Reviews/` ist von
   // den Stilprüfungen ausgenommen (CLAUDE.md Abschnitt 11); `node_modules/` ist
-  // Fremdbestand und wird nie geprüft.
+  // Fremdbestand und wird nie geprüft. `gitignore` hält den Bereich auf dem Baum,
+  // den CLAUDE.md beschreibt: Ohne die Option prüfte der Linter auch erzeugte
+  // Dateien unter `target/` — etwa die Lizenztexte, die `scripts/build-app.sh`
+  // ins App-Bündel legt — und ein Paketbau färbte das Gate rot
+  // (`Analysis/20261017_01_app-paket.md`).
   "globs": ["**/*.md", "!Reviews/**"],
-  "ignores": ["node_modules/**", ".git/**"]
+  "ignores": ["node_modules/**", ".git/**"],
+  "gitignore": true
 }

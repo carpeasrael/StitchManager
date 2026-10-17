@@ -100,6 +100,8 @@ bash scripts/check-qml.sh                # QML: qmllint und qmlformat, Stufe 0c 
 bash scripts/check-qml.test.sh           # dessen Selbsttest, Stufe 0b (5 s, 26 Fälle)
 #                                          ohne Qt: 5 davon geprüft, 21 entfallen
 bash scripts/check-hintergrund.sh        # Messwerkzeug, NICHT im Gate (~40 s)
+bash scripts/build-app.sh                # App-Bündel und .dmg, nur macOS, NICHT im Gate (~65 s)
+#                                          Entwicklungsbau: arm64, ad hoc signiert, Kennung vorläufig
 ```
 
 **Zu den Laufzeiten.** Die Klammerwerte sind **gemessen**, nicht geschätzt (Abschnitt 13.2 des
